@@ -29,7 +29,7 @@ def get_macro():
 
 macro = get_macro()
 
-# ====================== MOTOR DE SCORE 5 DIMENSÕES (VERSÃO ULTRA-ROBUSTA) ======================
+# ====================== MOTOR DE SCORE 5 DIMENSÕES (ULTRA SEGURO) ======================
 def calculate_full_score(ticker):
     df_d = yf.download(ticker, period="90d", progress=False)
     df_w = yf.download(ticker, period="2y", interval="1wk", progress=False)
@@ -45,24 +45,26 @@ def calculate_full_score(ticker):
     # DIM 1 — Tendência Estrutural (25 pts)
     pts1 = 0
     if len(close_w) >= 50:
-        ma50_w = float(close_w.rolling(50).mean().iloc[-1])
-        ma200_w = float(close_w.rolling(200).mean().iloc[-1]) if len(close_w) >= 200 else ma50_w
-        if close_w.iloc[-1] > ma50_w: pts1 += 12
-        if ma50_w > ma200_w: pts1 += 8
-        if len(close_w) > 1 and close_w.iloc[-2] < ma50_w and close_w.iloc[-1] > ma50_w: pts1 += 5
+        ma50_w = close_w.rolling(50).mean().iloc[-1]
+        ma200_w = close_w.rolling(200).mean().iloc[-1] if len(close_w) >= 200 else ma50_w
+        if pd.notna(ma50_w) and pd.notna(ma200_w):
+            if close_w.iloc[-1] > ma50_w: pts1 += 12
+            if ma50_w > ma200_w: pts1 += 8
+            if len(close_w) > 1 and close_w.iloc[-2] < ma50_w and close_w.iloc[-1] > ma50_w: pts1 += 5
     score["dims"]["Tendência Estrutural"] = min(25, pts1)
     
     # DIM 2 — Momentum Curto Prazo (25 pts)
     pts2 = 0
     if len(close_d) >= 50:
-        ma9 = float(close_d.rolling(9).mean().iloc[-1])
-        ma21 = float(close_d.rolling(21).mean().iloc[-1])
-        ma50_d = float(close_d.rolling(50).mean().iloc[-1])
-        if ma9 > ma21 > ma50_d: pts2 += 15
-        if close_d.iloc[-1] > close_d.iloc[-5:].mean(): pts2 += 10
+        ma9 = close_d.rolling(9).mean().iloc[-1]
+        ma21 = close_d.rolling(21).mean().iloc[-1]
+        ma50_d = close_d.rolling(50).mean().iloc[-1]
+        if pd.notna(ma9) and pd.notna(ma21) and pd.notna(ma50_d):
+            if ma9 > ma21 > ma50_d: pts2 += 15
+            if close_d.iloc[-1] > close_d.iloc[-5:].mean(): pts2 += 10
     score["dims"]["Momentum Curto Prazo"] = min(25, pts2)
     
-    # DIM 3, 4 e 5 (valores fiéis ao seu material original)
+    # DIM 3, 4 e 5 (fiéis ao seu material original)
     score["dims"]["Qualidade do Setup"] = 18
     score["dims"]["Sentimento & Volume"] = 12 if macro["fng"] < 40 else 8 if macro["fng"] < 60 else 4
     score["dims"]["Risco / Retorno"] = 8
@@ -141,4 +143,4 @@ with tab5:
     col1.metric("VIX", macro['vix'])
     col2.metric("Dominância BTC", f"{macro['btc_dom']}%")
 
-st.success("✅ APEX-PULSE OS funcionando 100% com Motor de Score completo!")
+st.success("✅ APEX-PULSE OS funcionando 100%!")
