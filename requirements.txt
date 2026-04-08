@@ -1,7 +1,6 @@
 streamlit
 pandas
 plotly
-requests
-ccxt
+yfinance
 pandas_ta
-python-dotenv
+requests
