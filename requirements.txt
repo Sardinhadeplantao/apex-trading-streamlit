@@ -4,3 +4,4 @@ plotly
 yfinance
 pandas_ta
 requests
+ccxt   # para Deribit, Binance Futures, etc. no futuro
