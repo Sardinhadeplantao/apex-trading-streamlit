@@ -1,28 +1,33 @@
-# APEX Trading Dashboard
+# Geomonitor
 
-Dashboard de trading interativo convertido do HTML/JS original para Streamlit. Features:
-- Watchlist com scores
-- Posição ativa com PnL real-time
-- Scanner de ativos
-- Métricas macro (SPX, VIX, BTC)
-- Dados simulados/live via yfinance
+Monitor de geopolítica e mercados globais: o que está acontecendo no mundo, com fonte e grau de confirmação,
+ligado ao que se mede nos mercados.
 
-## 🚀 Deploy Rápido
-1. Fork este repo ou crie novo no GitHub
-2. Vá em [streamlit.io/cloud](https://streamlit.io/cloud)
-3. "New app" > Selecione este repo > Deploy
-4. URL pública em 2min!
+**Site:** https://sardinhadeplantao.github.io/apex-trading-streamlit/
 
-## 🔧 Uso Local
-```bash
-pip install -r requirements.txt
-streamlit run app.py
+O painel antigo de trading (APEX, em Streamlit) foi guardado em `apex-antigo/`.
+
+## Como funciona
+
+```
+A cada 15 min                          Toda manhã (fase 3)
+Robô (GitHub Actions)                  Redator (tarefa agendada do Claude)
+  lê as fontes → grava o que é novo      lê os eventos do dia
+  → banco (Supabase)                     → escreve o briefing com links
+  → atualiza o site → avisa no Telegram
+                  ↓
+        Site com o globo (GitHub Pages)
 ```
 
-## 📱 Features
-- **Dashboard**: Posição ativa, scores, alerts
-- **Scanner**: Ranking por score (NVDA, AAPL, etc.)
-- **Auto-update**: Dados tickam a cada 3s
-- **Mobile-friendly**
+Custo: zero, dentro dos planos gratuitos do GitHub, Supabase e Telegram.
 
-![Screenshot](screenshot.png)  # Adicione uma imagem depois
+## Onde está cada coisa
+
+- `jobs/`: robô em Python (coleta, banco, status). Testes em `jobs/tests`.
+- `web/`: site (Next.js estático + MapLibre).
+- `docs/plano.md`: as fases e o que conta como pronto.
+- `docs/configurar.md`: passo a passo para ligar banco, Telegram e site.
+- `docs/decisoes/`: decisões de projeto, com data e motivo.
+- `CLAUDE.md`: regras que toda sessão de IA segue ao mexer no projeto.
+
+*Informação de contexto baseada em fontes públicas. Não é recomendação de investimento.*

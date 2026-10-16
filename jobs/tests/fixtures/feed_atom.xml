@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Exemplo Atom</title>
+  <id>urn:exemplo</id>
+  <updated>2026-10-15T12:00:00Z</updated>
+  <entry>
+    <title>Banco central anuncia decisão</title>
+    <link href="https://oficial.example.gov/comunicados/123"/>
+    <id>urn:exemplo:123</id>
+    <updated>2026-10-15T12:00:00Z</updated>
+    <summary>Comunicado oficial.</summary>
+  </entry>
+</feed>

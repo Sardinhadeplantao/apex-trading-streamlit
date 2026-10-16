@@ -1,0 +1,68 @@
+# Geomonitor
+
+Monitor de geopolítica e mercados globais. O usuário quer saber o que está acontecendo no mundo, se é verdade e se importa.
+O dono do projeto não é programador: explique em português simples, decida pelo que é melhor e diga o porquê.
+O plano está em `docs/plano.md`; as decisões, em `docs/decisoes/`.
+O projeto mora no repositório `apex-trading-streamlit` (já ligado ao Claude). A pasta `apex-antigo/` guarda um
+painel antigo que não faz parte do Geomonitor: não mexa nela.
+
+## Como funciona
+
+- **Robô** (`jobs/`, Python): roda no GitHub Actions a cada 15 minutos (`.github/workflows/robo.yml`).
+  Lê as fontes, grava o que é novo no banco e gera `web/public/dados/status.json`.
+- **Banco**: PostgreSQL no Supabase (plano gratuito), pelo segredo `DATABASE_URL`.
+  Sem ele, o robô usa um SQLite temporário e diz isso na tela Método.
+- **Site** (`web/`, Next.js estático + MapLibre): publicado no GitHub Pages. Só mostra o que o robô gravou.
+- **Avisos**: Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`), só quando a situação muda.
+- **IA**: nenhuma é obrigatória. Planejado: tarefa agendada do Claude para o briefing (fase 3) e API gratuita
+  (Groq/Gemini) como ajudante opcional. LLM local foi descartada (`docs/decisoes/0001-arquitetura.md`).
+
+## Regras que nenhuma mudança pode quebrar
+
+1. **Duas datas em tudo**: quando aconteceu (`publicado_em`, `ocorreu_em`) e quando o sistema soube (`conhecido_em`, UTC).
+2. **Nada é apagado nem reescrito.** O robô só insere. Correção vira registro novo. `downgrade` de migração não existe.
+3. **Documento repetido não entra duas vezes**: identidade pelo hash da URL canônica (`domain/documento.py`).
+4. **Notícia entra com grau de confirmação.** Rede social é pista, nunca fato, e nunca entra em conta.
+5. **Escopo por lista com critério escrito.** Toda fonte em `fontes.py` tem `criterio`. Nada entra por parecer importante.
+6. **Uma régua para todas as séries** (fase 2): percentil contra o próprio histórico, mesmos parâmetros, publicados na tela Método.
+7. **Regra decide; IA só lê, resume e traduz.** Confirmação, importância, mudança e julgamento saem de regra testada.
+   O sistema precisa funcionar com a IA desligada.
+8. **Preço é contexto**: nunca ordena eventos nem dispara aviso sozinho.
+9. **O site não calcula.** Cor só para estado medido; cinza = sem dado.
+10. **Mostrar o que não se mede** (tela Método).
+11. **Custo zero**: biblioteca gratuita antes de LLM; nada pago obrigatório.
+12. **Segredos só nos Secrets do GitHub.** Nunca em código, log, mensagem de erro ou conversa.
+    Erro de banco imprime só o tipo da exceção (a mensagem pode conter dados da conexão).
+13. **Só a branch `main` grava no banco de produção e manda avisos.** Branches rodam com banco temporário.
+
+## Estrutura
+
+```
+jobs/geomonitor/
+  domain/        regras puras (sem banco, rede ou IA)
+  connectors/    um conector por tipo de fonte; devolvem itens, não gravam
+  fontes.py      a lista de fontes (única)
+  db.py          esquema; mudou? crie migração nova em migracoes/versions/
+  robo.py        uma rodada: coletar, gravar, registrar, avisar
+  export.py      status.json para o site
+  avisos.py      Telegram
+jobs/tests/      test_referencia.py = casos de referência (não altere para passar)
+jobs/scripts/    ferramentas avulsas (ex.: preparar_paises.py)
+web/             site; dados do robô em public/dados/ (gerados, fora do git)
+```
+
+## Como trabalhar
+
+- Uma tarefa por sessão, com um "pronto quando" claro (veja `docs/plano.md`).
+- Escreva ou ajuste o caso de referência antes do código. Se um caso de referência precisar mudar,
+  a regra mudou: registre em `docs/decisoes/` antes.
+- Decisão de projeto nova = arquivo curto em `docs/decisoes/` com data, contexto, decisão e consequência.
+- Ideia fora da fase atual vai para `docs/ideias.md`.
+
+## Comandos
+
+```
+cd jobs && pip install -r requirements.txt && python -m pytest        # testes do robô
+cd jobs && python -m geomonitor.robo --exportar ../web/public/dados/status.json   # uma rodada (banco temporário sem DATABASE_URL)
+cd web && npm ci && npm test && npm run dev                           # site local em http://localhost:3000
+```
