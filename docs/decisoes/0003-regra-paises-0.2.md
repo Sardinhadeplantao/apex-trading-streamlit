@@ -26,7 +26,7 @@ A regra passa a `paises-0.2`, com estas mudanças. Os motivos estão no próprio
 - **Sedes internacionais não contam o país**: "Brussels"/"Bruxelas" (sede da UE) entram nos ignorados, como "Washington".
   "The Hague" sai, porque quase sempre quer dizer os tribunais de Haia.
 - **Capital de território dependente não conta**. Elas costumam ser nomes comuns (Stanley, Douglas, Plymouth, Saint-Denis).
-- **Mais nomes ambíguos ignorados**: Lima, Santiago, Sofia, Sucre, Praia, Nassau, Trípoli, Granada, Geórgia e outros.
+- **Mais nomes ambíguos ignorados**: Lima, Santiago, Sofia, Sucre, Praia, Nassau, Trípoli, Granada, Geórgia, "Reunião", "Maurício" e outros.
 - **Estados dos EUA contam os EUA**. Ficam de fora Georgia e Washington, que são ambíguos.
   Isso muda o caso de referência "New Mexico wildfire", que antes não contava país.
 - **Cidades que só existem num país** contam esse país: Los Angeles, Chicago, Áden, Zurique, Kaliningrado, Xangai.
@@ -43,7 +43,10 @@ A regra passa a `paises-0.2`, com estas mudanças. Os motivos estão no próprio
 - **Um nome por país**: o robô usa o nome do mapa, corrigido para o português do Brasil (Irã, Quênia, Taiwan, Peru).
 - **Apóstrofo tipográfico** (’) vale como o reto: "Côte d’Ivoire" conta a Costa do Marfim.
 - **Fonte do tipo rede social não entra na contagem** (regra 4), mesmo que um dia seja incluída na lista.
-- **Notícia com data mais de 1 hora no futuro** usa a hora da coleta, em vez de sumir da janela.
+- **Notícia com data da fonte mais de 1 hora depois da coleta** usa a hora da coleta, em vez de sumir da janela.
+  A conta é feita em Python, para dar o mesmo resultado no PostgreSQL e no SQLite.
+- **Mares, golfos e acordos com nome de país** não contam o país: Sea of Japan, Gulf of Guinea, South China Sea,
+  Acordo de Paris, France-Presse. "Gulf of Aden" continua contando o Iêmen (risco aceito abaixo).
 - **Licença**: `nomes_paises.json` é derivado da mledoze/countries e fica sob a ODbL 1.0. O arquivo diz isso,
   e o README e a tela Método também.
 
@@ -55,6 +58,10 @@ A regra passa a `paises-0.2`, com estas mudanças. Os motivos estão no próprio
   - "Virginia Woolf" e "Indiana Jones" contam os EUA.
   - "Gulf of Aden" conta o Iêmen.
   - Notícia sobre Bruxelas como cidade, sem dizer "Belgium", deixa de contar a Bélgica.
+  - Nomes de empresa e time contam o país de origem ("Chicago Bulls", "Turkish Airlines"), como "American Airlines" já fazia.
+  - "espanhol" como idioma conta a Espanha, embora o espanhol seja falado em uns 20 países.
+  - Regiões de outros países (Tatarstan, Bali, Baviera) não contam; só os estados dos EUA.
+  - "Aden" e "Riad" como nome de pessoa contam o Iêmen e a Arábia Saudita.
 - Nomes de pessoas (Netanyahu, Trump) continuam sem contar o país. Eles mudam com o tempo e colidem com outras coisas
   ("Trump Tower"). A tela Método diz isso.
 - "South and North Korea" ainda conta só a Coreia do Norte. Para resolver, um termo teria de apontar para dois

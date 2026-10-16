@@ -39,6 +39,12 @@ function estilo(plano: boolean, semDado: boolean): StyleSpecification {
   };
 }
 
+/** Siglas e nomes populares que a busca deve entender (o mapa só tem o nome oficial em português e inglês). */
+const APELIDOS: Record<string, string> = {
+  eua: "USA", us: "USA", usa: "USA", uk: "GBR", inglaterra: "GBR", "gra-bretanha": "GBR", uae: "ARE", eau: "ARE",
+  holanda: "NLD", birmania: "MMR",
+};
+
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 function isoDoHash(): string | null {
@@ -56,6 +62,7 @@ export default function Globo({ paises, niveis, janelaHoras, semDado }: Props) {
   const [busca, setBusca] = useState("");
   const [erro, setErro] = useState(false);
   const [camadaLigada, setCamadaLigada] = useState(true);
+  const camadaRef = useRef(true);  // o mapa pode ser recriado depois de a chave mudar
 
   // Países para a busca, para o painel e para centralizar o globo (mesmo arquivo do mapa; o navegador reaproveita)
   useEffect(() => {
@@ -83,7 +90,13 @@ export default function Globo({ paises, niveis, janelaHoras, semDado }: Props) {
     if (window.location.hash !== `#pais=${iso}`) history.replaceState(null, "", `#pais=${iso}`);
     const item = porIso.get(iso);
     setPais(item ?? null);
-    if (voar && item?.centro) mapaRef.current?.flyTo({ center: item.centro, zoom: Math.max(mapaRef.current.getZoom(), 2.6) });
+    if (voar && item?.centro && mapaRef.current && caixa.current) {
+      // Deixa o país fora da área que o painel cobre (à direita no computador, embaixo no celular)
+      const celular = window.matchMedia("(max-width: 760px)").matches;
+      const padding = celular ? { top: 0, left: 0, right: 0, bottom: caixa.current.clientHeight * 0.55 }
+        : { top: 0, left: 0, bottom: 0, right: Math.min(400, caixa.current.clientWidth * 0.45) };
+      mapaRef.current.flyTo({ center: item.centro, zoom: Math.max(mapaRef.current.getZoom(), 2.6), padding });
+    }
   }
   const selecionarRef = useRef(selecionar);
   selecionarRef.current = selecionar;
@@ -97,9 +110,10 @@ export default function Globo({ paises, niveis, janelaHoras, semDado }: Props) {
       const plano = window.matchMedia("(max-width: 760px)").matches;
       const mapa = new maplibregl.Map({
         container: caixa.current,
-        style: estilo(plano, semDado),
-        center: [20, 25],
-        zoom: plano ? 0.3 : 1.45,
+        style: estilo(plano, semDado || !camadaRef.current),
+        center: plano ? [10, 20] : [20, 25],
+        // no celular o mapa é plano: zoom para o mundo inteiro caber na largura
+        zoom: plano ? Math.max(Math.log2(caixa.current.clientWidth / 512), 0) : 1.45,
         attributionControl: { compact: true, customAttribution: "Fronteiras: Natural Earth" },
       });
       mapaRef.current = mapa;
@@ -122,13 +136,21 @@ export default function Globo({ paises, niveis, janelaHoras, semDado }: Props) {
       mapa.once("idle", () => { const iso = isoDoHash(); if (iso) selecionarRef.current(iso, true); });
     }).catch(() => setErro(true));
 
-    const aoMudarHash = () => selecionarRef.current(isoDoHash(), true);
+    const aoMudarHash = () => {
+      const iso = isoDoHash();
+      // Clique num país das listas (fora do mapa): traz o mapa para a tela, senão o painel abre sem ninguém ver
+      const r = caixa.current?.getBoundingClientRect();
+      if (iso && r && (r.bottom < 80 || r.top > window.innerHeight - 80)) {
+        caixa.current?.closest(".mapa-bloco")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      selecionarRef.current(iso, true);
+    };
     const aoMudarCamada = (e: Event) => {
       const mapa = mapaRef.current;
       const { id, ligada } = (e as CustomEvent<{ id: string; ligada: boolean }>).detail;
+      if (id === "citacoes") { camadaRef.current = ligada; setCamadaLigada(ligada); }
       if (!mapa) return;
       if (id === "citacoes") {
-        setCamadaLigada(ligada);
         mapa.setPaintProperty("paises", "fill-color", ligada && !semDado ? PREENCHIMENTO : COR_SEM_DADO);
       }
       if (id === "fronteiras") mapa.setLayoutProperty("fronteiras", "visibility", ligada ? "visible" : "none");
@@ -147,10 +169,11 @@ export default function Globo({ paises, niveis, janelaHoras, semDado }: Props) {
   const sugestoes = useMemo(() => {
     const q = semAcento(busca.trim());
     if (q.length < 2) return [];
-    return lista.filter((i) => semAcento(i.nome).includes(q) || semAcento(i.nome_en).includes(q) || i.iso.toLowerCase() === q)
-      .sort((a, b) => Number(!semAcento(a.nome).startsWith(q)) - Number(!semAcento(b.nome).startsWith(q)) || a.nome.localeCompare(b.nome))
-      .slice(0, 6);
-  }, [busca, lista]);
+    const apelido = porIso.get(APELIDOS[q] ?? "");
+    const achados = lista.filter((i) => semAcento(i.nome).includes(q) || semAcento(i.nome_en).includes(q) || i.iso.toLowerCase() === q)
+      .sort((a, b) => Number(!semAcento(a.nome).startsWith(q)) - Number(!semAcento(b.nome).startsWith(q)) || a.nome.localeCompare(b.nome));
+    return (apelido ? [apelido, ...achados.filter((i) => i !== apelido)] : achados).slice(0, 6);
+  }, [busca, lista, porIso]);
 
   function escolher(iso: string) {
     setBusca("");
@@ -174,7 +197,7 @@ export default function Globo({ paises, niveis, janelaHoras, semDado }: Props) {
           onKeyDown={(e) => { if (e.key === "Enter" && sugestoes[0]) escolher(sugestoes[0].iso); }}
         />
         {sugestoes.length > 0 && (
-          <ul className="sugestoes" role="listbox">
+          <ul className="sugestoes">
             {sugestoes.map((s) => (
               <li key={s.iso}>
                 <button type="button" onClick={() => escolher(s.iso)}>

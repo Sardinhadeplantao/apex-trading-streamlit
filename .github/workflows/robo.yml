@@ -38,6 +38,10 @@ jobs:
         env:
           # Só a branch principal grava no banco de produção e manda avisos; as outras usam banco temporário
           DATABASE_URL: ${{ github.ref == 'refs/heads/main' && secrets.DATABASE_URL || '' }}
+          # Ou só a senha do Supabase (segredo SUPABASE_SENHA); servidor e usuário do projeto não são segredo
+          SUPABASE_SENHA: ${{ github.ref == 'refs/heads/main' && secrets.SUPABASE_SENHA || '' }}
+          SUPABASE_HOST: aws-0-us-east-2.pooler.supabase.com
+          SUPABASE_USUARIO: postgres.ojtlxyfrcahhoifrcqbc
           TELEGRAM_BOT_TOKEN: ${{ github.ref == 'refs/heads/main' && secrets.TELEGRAM_BOT_TOKEN || '' }}
           TELEGRAM_CHAT_ID: ${{ github.ref == 'refs/heads/main' && secrets.TELEGRAM_CHAT_ID || '' }}
           # Fora da main, imprime cada notícia com os países encontrados (para conferir a regra com dados reais)

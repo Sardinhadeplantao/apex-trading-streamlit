@@ -18,7 +18,8 @@ export default function AvisoAtraso({ ate, gerado }: { ate: string | null | unde
   if (!atrasado) return null;
   return (
     <p className="aviso-atraso" role="status">
-      Dados parados desde {dataHora(gerado)} (Brasília). O robô pode estar desligado ou com falha: veja a tela Método.
+      Esta página mostra dados de {dataHora(gerado)} (Brasília). Recarregue a página; se o aviso continuar, o robô pode
+      estar parado: veja a tela Método.
     </p>
   );
 }

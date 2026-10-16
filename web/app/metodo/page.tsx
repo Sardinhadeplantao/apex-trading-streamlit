@@ -24,6 +24,8 @@ export default function Metodo() {
   const rodada = s.ultima_rodada;
   const sit = situacao(rodada?.situacao);
   const a = s.atencao;
+  const semBanco = s.banco === "erro";
+  const SEM_BANCO = "Sem dado nesta atualização: o banco não abriu.";
   const criterios = agruparCriterios(s.fontes.filter((f) => f.ativa));
   return (<>
     <AvisoAtraso ate={s.avisar_atraso_apos} gerado={s.gerado_em} />
@@ -34,9 +36,9 @@ export default function Metodo() {
       <section>
         <h2>Regras</h2>
         <ul className="regras">
-          <li><b>Toda informação tem fonte e duas datas:</b> quando aconteceu e quando o sistema soube.</li>
+          <li><b>Toda informação tem fonte e duas datas:</b> quando a fonte publicou (se ela informa) e quando o sistema soube.</li>
           <li><b>Nada é apagado nem reescrito.</b> Correção vira registro novo.</li>
-          <li><b>Notícia entra com grau de confirmação.</b> Rede social é só pista, nunca fato.</li>
+          <li><b>Notícia vai ganhar grau de confirmação</b> na fase 1; por enquanto aparece solta, com a fonte. Rede social é só pista, nunca fato.</li>
           <li><b>Fontes entram por critério escrito,</b> não por parecerem interessantes.</li>
           <li><b>Regra decide; IA só lê, resume e traduz.</b> O sistema funciona sem IA.</li>
           <li><b>Preço é contexto:</b> nunca ordena eventos nem dispara aviso sozinho.</li>
@@ -89,8 +91,13 @@ export default function Metodo() {
           <dt>Última rodada</dt>
           <dd><span className={`ponto ${sit.classe}`} aria-hidden /> {sit.texto} · {dataHora(rodada?.iniciada_em)} (Brasília)</dd>
           <dt>Banco</dt><dd>{s.banco ? BANCO[s.banco] : "—"}</dd>
-          <dt>Fontes funcionando</dt><dd>{s.totais.fontes_ok} de {s.totais.fontes}</dd>
-          <dt>Documentos</dt><dd>{numero(s.totais.documentos)} no total · {numero(s.totais.documentos_24h)} coletados nas últimas 24h</dd>
+          <dt>Fontes funcionando</dt>
+          <dd>{rodada ? `${s.totais.fontes_ok} de ${s.totais.fontes}` : <span className="sem-dado-texto">—</span>}</dd>
+          <dt>Documentos</dt>
+          <dd>
+            {semBanco ? <span className="sem-dado-texto">—</span>
+              : <>{numero(s.totais.documentos)} no total · {numero(s.totais.documentos_24h)} coletados nas últimas 24h</>}
+          </dd>
           <dt>Versão do robô</dt><dd>{s.versao_robo ?? "—"}</dd>
         </dl>
         {s.rodadas_recentes.length > 0 && (
@@ -105,7 +112,7 @@ export default function Metodo() {
 
       <section>
         <h2>Fontes</h2>
-        {s.fontes.length === 0 ? <p className="sem-dado-texto">O robô ainda não rodou.</p> : (
+        {s.fontes.length === 0 ? <p className="sem-dado-texto">{semBanco ? SEM_BANCO : "O robô ainda não rodou."}</p> : (
           <div className="tabela-rolagem">
             <table>
               <thead>
@@ -141,9 +148,9 @@ export default function Metodo() {
       </section>
 
       <section id="documentos">
-        <h2>Últimas notícias coletadas</h2>
+        <h2>{s.ultimos_documentos.length > 1 ? `As ${s.ultimos_documentos.length} notícias mais recentes` : "Notícias mais recentes"}</h2>
         <p className="discreto">Ainda soltas: a organização em eventos, com grau de confirmação, começa na fase 1.</p>
-        {s.ultimos_documentos.length === 0 ? <p className="sem-dado-texto">Nenhum documento ainda.</p> : (
+        {s.ultimos_documentos.length === 0 ? <p className="sem-dado-texto">{semBanco ? SEM_BANCO : "Nenhum documento ainda."}</p> : (
           <ul className="documentos">
             {s.ultimos_documentos.map((d, i) => (
               <li key={i}>

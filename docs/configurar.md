@@ -24,9 +24,12 @@ Nas próximas sessões do Claude, escolha o repositório `stratum-global`.
 1. Entre em https://supabase.com e crie uma conta (dá para usar a do GitHub).
 2. **New project**: nome `stratum-global`; crie uma senha forte para o banco e guarde num gerenciador de senhas;
    região: uma do leste dos EUA (fica perto de onde o robô roda); plano **Free**.
-3. Com o projeto pronto, clique em **Connect** (no topo da página do projeto).
-4. Na lista de tipos de conexão, escolha **Session pooler**. É importante: o GitHub não consegue usar o endereço "Direct connection".
-5. Copie o endereço que começa com `postgresql://` e troque `[YOUR-PASSWORD]` pela senha do passo 2.
+3. Se precisar trocar a senha: **Project Settings → Database → Reset database password**.
+   Prefira uma senha só com letras e números.
+
+O robô já sabe o servidor e o usuário deste projeto (estão em `.github/workflows/robo.yml`, porque não são segredo).
+Só a senha vai para o GitHub, no passo 4. Se um dia o projeto do Supabase mudar, peça ao Claude para atualizar
+`SUPABASE_HOST` e `SUPABASE_USUARIO` no workflow (em **Connect → Direct → Session pooler**, eles aparecem como host e user).
 
 ## 3. Criar o bot do Telegram
 
@@ -41,7 +44,7 @@ No repositório: **Settings → Secrets and variables → Actions → New reposi
 
 | Nome | Valor |
 |---|---|
-| `DATABASE_URL` | o endereço do passo 2, já com a senha |
+| `SUPABASE_SENHA` | só a senha do banco (passo 2) |
 | `TELEGRAM_BOT_TOKEN` | o token do passo 3.1 |
 | `TELEGRAM_CHAT_ID` | o número do passo 3.3 |
 

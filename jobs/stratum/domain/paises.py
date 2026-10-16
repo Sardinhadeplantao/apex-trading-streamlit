@@ -4,7 +4,8 @@
   gerado por scripts/preparar_nomes_paises.py, onde ficam as escolhas manuais e os termos ignorados por ambiguidade.
 - Diferencia maiúsculas: "Turkey" é país, "turkey" não. Palavra inteira: "Niger" não casa dentro de "Nigeria".
 - O termo mais longo vence: "Papua New Guinea" não conta "Guinea"; "Latin American" não conta os EUA.
-- Expressão que não é país consome o resto da palavra: "South Americans" também não conta os EUA.
+- Expressão que não é país aceita plural e gênero: "South Americans" também não conta os EUA
+  (só esses finais, para "Moscow timeline" continuar contando a Rússia).
 - Apóstrofo tipográfico vale como o reto: "Côte d’Ivoire" = "Côte d'Ivoire".
 - Cada texto conta no máximo uma vez para cada país.
 """
@@ -14,6 +15,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+SUFIXO = r"(?:ns|os|as|n|s|o|a)?"  # finais aceitos depois de uma expressão que não é país
 ARQUIVO = Path(__file__).resolve().parent.parent / "dados" / "nomes_paises.json"
 
 
@@ -31,7 +33,7 @@ class Dicionario:
 
 def montar(versao: str, termos: dict, nomes: dict, ignorados=()) -> Dicionario:
     ordenados = sorted(termos, key=len, reverse=True)  # mais longo primeiro: a alternância do regex respeita a ordem
-    alternativas = "|".join(re.escape(t) + (r"\w*" if termos[t] is None else "") for t in ordenados)
+    alternativas = "|".join(re.escape(t) + (SUFIXO if termos[t] is None else "") for t in ordenados)
     # Antes: não pode ser letra/número. Depois: nem letra/número nem "$" (US$ é moeda, não os EUA)
     padrao = re.compile(rf"(?<!\w)(?:{alternativas})(?![\w$])")
     return Dicionario(versao, dict(termos), dict(nomes), tuple(ignorados), padrao)

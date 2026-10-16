@@ -52,6 +52,9 @@ def test_citacoes_por_pais_na_janela(engine, cfg):
     assert s["origem_fontes"] == [{"pais": "GBR", "nome": "Reino Unido", "documentos": 5, "proporcao": 1.0},
                                   {"pais": "USA", "nome": "Estados Unidos", "documentos": 1, "proporcao": 0.2}]
     assert s["avisar_atraso_apos"] == "2026-10-16T14:00:00Z"
+    # 25 h depois, a notícia de data adiantada sai da janela (vale a hora da coleta, não a data futura)
+    depois = export.montar(engine, agora=lambda: AGORA + timedelta(hours=25))
+    assert depois["atencao"]["documentos"] == 0 and "RUS" not in depois["paises"]
 
 
 def test_ultimos_documentos_mais_recentes_primeiro_com_paises(engine, cfg):

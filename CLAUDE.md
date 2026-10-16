@@ -10,8 +10,9 @@ O endereço do site acompanha o nome do repositório sozinho (o robô usa o nome
 
 - **Robô** (`jobs/`, Python): roda no GitHub Actions a cada 15 minutos (`.github/workflows/robo.yml`).
   Lê as fontes, grava o que é novo no banco e gera `web/public/dados/status.json`.
-- **Banco**: PostgreSQL no Supabase (plano gratuito), pelo segredo `DATABASE_URL`.
-  Sem ele, o robô usa um SQLite temporário e diz isso na tela Método.
+- **Banco**: PostgreSQL no Supabase (plano gratuito), pelo segredo `SUPABASE_SENHA` (servidor e usuário ficam no workflow)
+  ou por um `DATABASE_URL` completo. Session pooler, porque o GitHub Actions não tem IPv6.
+  Sem isso, o robô usa um SQLite temporário e diz isso na tela Método.
 - **Site** (`web/`, Next.js estático + MapLibre): publicado no GitHub Pages. Só mostra o que o robô gravou.
 - **Avisos**: Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`), só quando a situação muda.
 - **IA**: nenhuma é obrigatória. Planejado: tarefa agendada do Claude para o briefing (fase 3) e API gratuita
@@ -66,6 +67,6 @@ web/             site; dados do robô em public/dados/ (gerados, fora do git)
 
 ```
 cd jobs && pip install -r requirements.txt && python -m pytest        # testes do robô
-cd jobs && python -m stratum.robo --exportar ../web/public/dados/status.json   # uma rodada (banco temporário sem DATABASE_URL)
+cd jobs && python -m stratum.robo --exportar ../web/public/dados/status.json   # uma rodada (banco temporário sem senha do banco)
 cd web && npm ci && npm test && npm run dev                           # site local em http://localhost:3000
 ```

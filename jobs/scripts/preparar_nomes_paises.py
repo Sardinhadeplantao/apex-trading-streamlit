@@ -37,7 +37,7 @@ ESTADOS_USA = [
 ]
 
 # Gentílicos em português dos países mais presentes no noticiário. Em minúsculas, como se escreve no meio da frase;
-# no começo da frase só o plural ("Russos atacam"), porque o singular com maiúscula costuma ser sobrenome
+# no começo da frase, o plural ("Russos atacam"); o singular com maiúscula só entra quando é forma própria ("Francês")
 _GENTILICOS_PT = {
     "RUS": "russo", "USA": "norte-americano americano", "CHN": "chinês", "UKR": "ucraniano", "ISR": "israelense",
     "IRN": "iraniano", "YEM": "iemenita", "BRA": "brasileiro", "ARG": "argentino", "IND": "indiano", "PSE": "palestino",
@@ -77,10 +77,10 @@ def _gentilicos_pt(texto: str) -> list[str]:
 # que só existem em um país. Escolha manual: vence a base e os conflitos
 EXTRAS = {
     "GBR": ["Britain", "Great Britain", "England", "Scotland", "Wales", "Northern Ireland", "Northern Irish", "Scottish",
-            "Welsh", "Downing Street", "Grã-Bretanha", "Inglaterra", "Escócia", "País de Gales", "Londres"],
+            "Welsh", "Downing Street", "Grã-Bretanha", "Inglaterra", "Escócia", "País de Gales", "Londres", "Irlanda do Norte"],
     "USA": ["White House", "Pentagon", "Capitol Hill", "Casa Branca", "Pentágono", "Washington, D.C.", "Washington DC",
             "Washington D.C.", "Los Angeles", "Chicago", "Boston", "San Francisco", "Houston", "New England",
-            "Indian-American", "Indian-Americans", "Indian American", "Indian Americans", *ESTADOS_USA],
+            "Indian-American", "Indian-Americans", "Indian American", "Indian Americans", *ESTADOS_USA, "Alasca", "Jersey City"],
     "RUS": ["Kremlin", "Kremlim", "Moscou", "Kaliningrad", "Kaliningrado"],
     "PSE": ["Gaza", "West Bank", "Palestinian", "Palestinians", "Palestine", "Faixa de Gaza", "Cisjordânia", "Ramallah"],
     "TUR": ["Turkey", "Türkiye", "Turquia", "Istanbul", "Istambul", "Ancara"],
@@ -90,14 +90,13 @@ EXTRAS = {
     "TLS": ["East Timor"],
     "IDN": ["West Timor", "Jacarta"],
     "SWZ": ["Swaziland"],
-    "COD": ["DR Congo", "Democratic Republic of Congo", "Democratic Republic of the Congo", "Congo-Kinshasa", "Kinshasa"],
+    "COD": ["DR Congo", "Democratic Republic of Congo", "Democratic Republic of the Congo", "Congo-Kinshasa", "Kinshasa", "RDC"],
     "COG": ["Republic of the Congo", "Congo-Brazzaville", "Brazzaville"],
     "PRK": ["North Korea", "North Korean", "North Koreans", "Pyongyang", "Coreia do Norte"],
     "KOR": ["South Korea", "South Korean", "South Koreans", "Seoul", "Coreia do Sul", "Seul"],
     "UKR": ["Kyiv", "Kiev", "Ucrânia", "Kharkiv", "Kharkov", "Carcóvia", "Odesa"],
     "TWN": ["Taipei", "Taipé"],
     "VAT": ["Vatican", "Holy See", "Vaticano"],
-    "NGA": ["Niger Delta"],
     "SAU": ["Saudi", "Saudis", "Riyadh", "Riad"],
     "ARE": ["Emirati", "Emiratis", "Abu Dabi"],
     "NLD": ["Holanda"],
@@ -134,6 +133,10 @@ EXTRAS = {
     "AFG": ["Cabul"],
     "IND": ["Delhi", "Nova Délhi"],
     "CHE": ["Zurich", "Zurique"],
+    "NGA": ["Niger Delta", "Benin City"],
+    "MEX": ["Baja California", "Baixa Califórnia"],
+    "NOR": ["Svalbard"],
+    "ITA": ["em Roma"],  # "Roma" sozinho em inglês é o povo roma
     "VIR": ["U.S. Virgin Islands", "US Virgin Islands"],
     "CYN": ["Northern Cyprus", "Turkish Cypriot"],
     "SOL": ["Somaliland", "Hargeisa"],
@@ -153,14 +156,14 @@ AMBIGUOS = {
     "Brussels", "Bruxelas",                    # sede da União Europeia: quase sempre quer dizer a UE, não a Bélgica
     "Victoria", "Kingston", "Georgetown", "Hamilton", "San José", "Male", "Malé",  # capitais com nome muito comum
     "Lima", "Santiago", "Sofia", "Sucre", "Praia", "Nassau", "Tripoli", "Trípoli",  # nomes de pessoa ou de outros lugares
-    "Granada", "Guadalupe", "Reunion", "Mann", "Thais", "Diego Garcia",
+    "Granada", "Guadalupe", "Reunion", "Reunião", "Mann", "Thais", "Diego Garcia", "Maurício",
     "Jerusalem", "Jerusalém",                  # disputada
     "Macedonia", "Macedonian",                 # também região da Grécia
     "English", "inglês",                       # idioma
     "Guinean", "Guineans",                     # quatro países com "Guinea" no nome
 }
 
-# Expressões que contêm nome de país mas não se referem a ele. Consomem o resto da palavra ("South Americans")
+# Expressões que contêm nome de país mas não se referem a ele. Aceitam plural e gênero ("South Americans", "latino-americanas")
 SEM_PAIS = [
     "Indian Ocean", "Latin America", "South America", "North America", "Central America", "American Indian",
     "Pan-American", "Pan American", "Inter-American", "Organization of American States", "New Guinea", "New South Wales",
@@ -169,6 +172,13 @@ SEM_PAIS = [
     "Oceano Índico", "América Latina", "América do Sul", "América do Norte", "América Central", "latino-american",
     "Latino-american", "sul-american", "Sul-american", "centro-american", "Centro-american", "montanha-russa",
     "montanhas-russas", "roleta-russa", "roleta russa", "futebol americano", "café americano",
+    # mares, golfos, acordos e nomes próprios com país dentro
+    "Sea of Japan", "Mar do Japão", "Gulf of Guinea", "Golfo da Guiné", "Gulf of California", "Golfo da Califórnia",
+    "South China Sea", "East China Sea", "Mar do Sul da China", "Mar da China Oriental", "Paris Agreement",
+    "Acordo de Paris", "Rome Statute", "Estatuto de Roma", "Oslo Accords", "Acordos de Oslo", "Colorado Party",
+    "Partido Colorado", "France-Presse", "France Presse", "Ibero-American", "ibero-american", "Hispano-American",
+    "hispano-american", "pan-american", "Latin-American", "Anglo American", "Nova Guiné", "Cooperação de Xangai",
+    "horário de Moscou", "Atlético de Madrid",
 ]
 
 _SO_LATIM = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿĀ-ž'’.\- ]+$")

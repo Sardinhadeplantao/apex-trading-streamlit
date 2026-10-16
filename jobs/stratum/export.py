@@ -4,7 +4,7 @@ import os
 import unicodedata
 from datetime import timedelta
 
-from sqlalchemy import case, func, select
+from sqlalchemy import func, or_, select
 
 from stratum import VERSAO, db
 from stratum.domain import paises
@@ -15,7 +15,7 @@ RODADAS_RECENTES = 24
 
 # Citações de países: quantas notícias publicadas na janela citam cada país (regra em domain/paises.py)
 JANELA_HORAS = 24
-TOLERANCIA_FUTURO = timedelta(hours=1)  # feeds com relógio adiantado; além disso, vale a hora da coleta
+TOLERANCIA_FUTURO = timedelta(hours=1)  # data da fonte mais de 1h depois da coleta: relógio errado, vale a da coleta
 NIVEIS = (1, 3, 10, 30)                  # 1-2 citações = nível 1; 3-9 = 2; 10-29 = 3; 30 ou mais = 4
 DOCUMENTOS_POR_PAIS = 5
 MAIS_CITADOS = 8
@@ -33,10 +33,19 @@ def nivel(citacoes: int) -> int:
     return sum(1 for limite in NIVEIS if citacoes >= limite)
 
 
-def _quando(momento):
-    """Quando a notícia saiu: a data da fonte; sem ela, ou adiantada demais, a hora da coleta."""
-    publicado, conhecido = db.documento.c.publicado_em, db.documento.c.conhecido_em
-    return case((publicado.is_(None), conhecido), (publicado > momento + TOLERANCIA_FUTURO, conhecido), else_=publicado)
+def quando(d):
+    """Quando a notícia saiu: a data da fonte; sem ela, ou adiantada demais em relação à coleta, a hora da coleta.
+    Calculado aqui, e não no SQL, para dar o mesmo resultado no PostgreSQL e no SQLite."""
+    publicado, conhecido = d["publicado_em"], d["conhecido_em"]
+    return conhecido if publicado is None or publicado > conhecido + TOLERANCIA_FUTURO else publicado
+
+
+def _documentos_desde(c, inicio) -> list[dict]:
+    """Documentos cuja data (regra de quando()) é a partir de inicio, do mais recente para o mais antigo."""
+    candidatos = c.execute(select(db.documento).where(
+        or_(db.documento.c.publicado_em >= inicio, db.documento.c.conhecido_em >= inicio))).mappings().all()
+    docs = [dict(d, quando=quando(d)) for d in candidatos]
+    return sorted((d for d in docs if d["quando"] >= inicio), key=lambda d: (d["quando"], d["id"]), reverse=True)
 
 
 def _ordem_alfabetica(nome: str) -> str:
@@ -48,7 +57,6 @@ def montar(engine, agora=db.agora) -> dict:
     momento = agora()
     limite_24h = momento - timedelta(hours=24)
     inicio_janela = momento - timedelta(hours=JANELA_HORAS)
-    quando = _quando(momento)
     with engine.connect() as c:
         ultima = c.execute(select(db.rodada).order_by(db.rodada.c.id.desc()).limit(1)).mappings().first()
         recentes = c.execute(select(db.rodada.c.iniciada_em, db.rodada.c.situacao)
@@ -64,12 +72,12 @@ def montar(engine, agora=db.agora) -> dict:
                                        .where(db.documento.c.conhecido_em >= limite_24h)
                                        .group_by(db.documento.c.fonte_id)).all())
         fontes = c.execute(select(db.fonte).order_by(db.fonte.c.tipo, db.fonte.c.nome)).mappings().all()
-        janela = c.execute(select(db.documento, quando.label("quando"))
-                           .where(quando >= inicio_janela)
-                           .order_by(quando.desc(), db.documento.c.id.desc())).mappings().all()
+        janela = _documentos_desde(c, inicio_janela)
         if len(janela) < ULTIMOS_DOCUMENTOS:  # janela curta (fontes paradas): mostra os mais recentes mesmo assim
-            ultimos = c.execute(select(db.documento, quando.label("quando"))
-                                .order_by(quando.desc(), db.documento.c.id.desc()).limit(ULTIMOS_DOCUMENTOS)).mappings().all()
+            recentes_coletados = c.execute(select(db.documento).order_by(db.documento.c.id.desc())
+                                           .limit(ULTIMOS_DOCUMENTOS * 5)).mappings().all()
+            ultimos = sorted((dict(d, quando=quando(d)) for d in recentes_coletados),
+                             key=lambda d: (d["quando"], d["id"]), reverse=True)[:ULTIMOS_DOCUMENTOS]
         else:
             ultimos = janela[:ULTIMOS_DOCUMENTOS]
 
@@ -170,14 +178,12 @@ def _gravar_json(caminho: str, dados: dict) -> None:
 def diagnostico(engine, agora=db.agora) -> list[str]:
     """Uma linha por notícia da janela com os países encontrados, para conferir a regra com manchetes reais."""
     momento = agora()
-    quando = _quando(momento)
     with engine.connect() as c:
-        docs = c.execute(select(db.documento.c.fonte_id, db.documento.c.titulo, db.documento.c.resumo)
-                         .where(quando >= momento - timedelta(hours=JANELA_HORAS))
-                         .order_by(db.documento.c.fonte_id, db.documento.c.id)).all()
+        docs = _documentos_desde(c, momento - timedelta(hours=JANELA_HORAS))
     dicionario = paises.carregar()
     linhas = []
-    for fonte_id, titulo, resumo in docs:
+    for d in sorted(docs, key=lambda d: (d["fonte_id"], d["id"])):
+        fonte_id, titulo, resumo = d["fonte_id"], d["titulo"], d["resumo"]
         achados = paises.encontrados(f"{titulo}\n{resumo or ''}", dicionario)
         termos = sorted({t for t, _ in achados})
         isos = sorted({iso for _, iso in achados if iso})

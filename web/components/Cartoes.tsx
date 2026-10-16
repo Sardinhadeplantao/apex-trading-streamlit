@@ -52,8 +52,8 @@ export default function Cartoes({ status }: { status: Status }) {
       <article className="cartao bloco">
         <h2 className="rotulo">Quem está falando</h2>
         <p className="discreto">
-          Notícias em {janela} h pelo país de cada fonte. Há um veículo por país: a barra mostra quanto cada um publica,
-          não quem pauta o assunto.
+          Notícias em {janela} h pelo país de cada fonte (a lista está em Método; algumas fontes são oficiais). A barra
+          mostra quanto as fontes de cada país publicam, não quem pauta o assunto.
         </p>
         {!medido ? SEM_DADO : status.origem_fontes.length === 0 ? <p>Nenhuma notícia na janela.</p> : (
           <ol className="barras">

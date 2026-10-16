@@ -34,6 +34,11 @@ CASOS = [
     ("Palestine Action ban", set()),
     ("Real Madrid wins", set()),
     ("A montanha-russa da bolsa", set()),
+    ("sailed into the Sea of Japan", set()),
+    ("Gulf of Guinea piracy", set()),
+    ("Agence France-Presse reports", set()),
+    ("cúpula ibero-americana", set()),
+    ("Moscow timeline of the war", {"RUS"}),  # só plural e gênero são consumidos
     ("Indian navy deploys ships", {"IND"}),
     # termos ambíguos ignorados
     ("Georgia governor signs bill", set()),
@@ -64,6 +69,12 @@ CASOS = [
     ("U.S. Virgin Islands governor", {"VIR"}),  # o território, não as Ilhas Virgens Britânicas
     # território desenhado dentro de outro país conta para esse país
     ("Cyclone hits Réunion", {"FRA"}),
+    ("Svalbard seed vault", {"NOR"}),
+    ("A fire in Benin City, Nigeria", {"NGA"}),
+    ("Storm hits Baja California", {"MEX"}),
+    ("protestos na Irlanda do Norte", {"GBR"}),
+    ("A reunião de cúpula", set()),
+    ("Reunião de chanceleres", set()),
     # metonímias do Estado
     ("Kremlin says talks are possible", {"RUS"}),
     ("White House and Beijing trade barbs", {"USA", "CHN"}),

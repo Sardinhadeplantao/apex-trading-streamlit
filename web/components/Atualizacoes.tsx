@@ -8,7 +8,7 @@ export default function Atualizacoes({ documentos }: { documentos: Documento[] }
     <section className="atualizacoes bloco" aria-labelledby="titulo-atualizacoes">
       <div className="bloco-topo">
         <h2 id="titulo-atualizacoes" className="rotulo">Últimas atualizações</h2>
-        <Link href="/metodo/#documentos" className="ver-todas">Ver todas</Link>
+        <Link href="/metodo/#documentos" className="ver-todas">Mais notícias</Link>
       </div>
       {documentos.length === 0 ? <p className="sem-dado-texto">Sem dado nesta atualização.</p> : (
         <ol className="feed">

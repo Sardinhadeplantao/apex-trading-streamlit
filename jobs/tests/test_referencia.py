@@ -125,3 +125,24 @@ def test_status_quando_o_banco_nao_abre(tmp_path):
     export.escrever_falha_banco(str(caminho), "OperationalError")
     dados = json.loads(caminho.read_text(encoding="utf-8"))
     assert dados["banco"] == "erro" and "OperationalError" in dados["erro_banco"]
+    assert dados["atencao"] is None and dados["avisar_atraso_apos"]  # cinza no site, e aviso se o robô parar
+
+
+def test_erro_de_banco_nao_mostra_a_mensagem_crua():
+    from sqlalchemy.exc import OperationalError
+    erro = OperationalError("INSERT", {}, Exception("senha errada para postgres://usuario:segredo@servidor"))
+    texto = robo.erro_legivel(erro)
+    assert "segredo" not in texto and "servidor" not in texto and "OperationalError" in texto
+
+
+def test_endereco_do_banco_so_com_a_senha(monkeypatch):
+    from stratum import config
+    for nome in ("DATABASE_URL", "SUPABASE_SENHA", "SUPABASE_HOST", "SUPABASE_USUARIO"):
+        monkeypatch.delenv(nome, raising=False)
+    assert config.endereco_do_banco() is None  # sem senha: banco temporário
+    monkeypatch.setenv("SUPABASE_HOST", "aws-0-us-east-2.pooler.supabase.com")
+    monkeypatch.setenv("SUPABASE_USUARIO", "postgres.abc")
+    monkeypatch.setenv("SUPABASE_SENHA", "a@b#c/d")
+    assert config.endereco_do_banco() == "postgresql://postgres.abc:a%40b%23c%2Fd@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
+    monkeypatch.setenv("DATABASE_URL", "postgresql://x")
+    assert config.endereco_do_banco() == "postgresql://x"  # o endereço completo, se existir, vence

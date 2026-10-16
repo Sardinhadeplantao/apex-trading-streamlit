@@ -12,7 +12,8 @@
   --ok: #4caf7d;
   --parcial: #d9a441;
   --falhou: #d9534f;
-  --sem-dado: #5d6779;
+  --sem-dado: #5d6779;        /* preenchimento: mapa, pontos, quadrados */
+  --sem-dado-texto: #8a94a6;  /* texto "sem dado": mesmo tom, legível (contraste 6:1) */
   --topo: 56px;
   --raio: 10px;
   color-scheme: dark;
@@ -26,9 +27,9 @@ a:hover { text-decoration: underline; }
 h1, h2, h3 { line-height: 1.2; }
 .discreto { color: var(--texto-2); font-size: 12.5px; }
 .rotulo { display: block; margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--texto-2); }
-.sem-dado-texto { color: var(--sem-dado); margin: 0; }
+.sem-dado-texto { color: var(--sem-dado-texto); margin: 0; }
 .bloco { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); }
-.fase { font-size: 10.5px; color: var(--texto-3); border: 1px solid var(--borda); border-radius: 999px; padding: 0 7px; white-space: nowrap; }
+.fase { font-size: 10.5px; color: var(--texto-2); border: 1px solid var(--borda); border-radius: 999px; padding: 0 7px; white-space: nowrap; }
 
 /* Topo */
 .topo {
@@ -92,6 +93,7 @@ h1, h2, h3 { line-height: 1.2; }
 .globo-busca input {
   width: 100%; background: transparent; border: 0; color: var(--texto); padding: 9px 12px; font: inherit; outline: none;
 }
+.globo-busca:focus-within { border-color: var(--destaque); }
 .globo-busca input::placeholder { color: var(--texto-3); }
 .sugestoes { list-style: none; margin: 0; padding: 4px; border-top: 1px solid var(--borda); }
 .sugestoes button {
@@ -102,13 +104,15 @@ h1, h2, h3 { line-height: 1.2; }
 .legenda-faixas { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--texto-2); }
 .legenda-faixas span { display: flex; align-items: center; gap: 5px; }
 .legenda-faixas i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid rgba(255, 255, 255, .08); }
-.globo-dica, .globo-erro { left: 50%; bottom: 14px; transform: translateX(-50%); padding: 4px 10px; font-size: 13px; pointer-events: none; }
+.globo-dica, .globo-erro { left: 50%; transform: translateX(-50%); padding: 4px 10px; font-size: 13px; pointer-events: none; }
+.globo-dica { top: 60px; }   /* em cima: embaixo ela cobriria a legenda em telas de notebook */
+.globo-erro { bottom: 14px; }
 .globo-erro { border-color: var(--falhou); }
 .maplibregl-ctrl-top-right { top: 6px; right: 6px; }
 
 /* Painel do país (sobre o mapa) */
 .painel {
-  position: absolute; z-index: 3; top: 12px; right: 52px; bottom: 12px; width: min(340px, calc(100% - 24px)); overflow-y: auto;
+  position: absolute; z-index: 3; top: 60px; right: 52px; bottom: 12px; width: min(340px, calc(100% - 24px)); overflow-y: auto;
   background: rgba(10, 18, 31, .97); border: 1px solid var(--borda-forte); border-radius: var(--raio); padding: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
 }
@@ -131,7 +135,7 @@ h1, h2, h3 { line-height: 1.2; }
 .indicador { padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .indicador .rotulo { display: flex; align-items: center; gap: 6px; }
 .indicador strong { font-size: 26px; font-weight: 650; line-height: 1.15; color: var(--texto); }
-.sem-dado-bloco strong { color: var(--sem-dado); }
+.sem-dado-bloco strong { color: var(--sem-dado-texto); }
 
 /* Últimas atualizações */
 .atualizacoes { padding: 14px; display: flex; flex-direction: column; min-height: 0; max-height: calc(clamp(420px, 64vh, 680px) + 12px + 104px); }
@@ -194,6 +198,7 @@ td .erro { color: var(--falhou); font-size: 12px; max-width: 280px; overflow-wra
 .documentos { list-style: none; padding: 0; margin: 0; }
 .documentos li { padding: 8px 0; border-bottom: 1px solid var(--borda); }
 .rodape { margin-top: 40px; }
+.mapa-bloco { scroll-margin-top: calc(var(--topo) + 8px); }
 
 /* Telas médias: sem a lateral; atualizações ao lado do mapa */
 @media (max-width: 1180px) {
@@ -215,7 +220,7 @@ td .erro { color: var(--falhou); font-size: 12px; max-width: 280px; overflow-wra
   .mapa-bloco { height: 62vh; }
   .globo-titulo { display: none; }
   .globo-busca { left: 8px; right: 48px; width: auto; top: 8px; }
-  .legenda { left: 8px; bottom: 8px; }
+  .legenda { left: 8px; bottom: 34px; }  /* acima do crédito "Fronteiras: Natural Earth" */
   .painel { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 62%; }
   .indicadores { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .indicador strong { font-size: 22px; }

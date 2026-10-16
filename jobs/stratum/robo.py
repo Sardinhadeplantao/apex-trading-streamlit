@@ -7,7 +7,7 @@ import sys
 from dataclasses import dataclass, field
 
 import requests
-from sqlalchemy import select
+from sqlalchemy import exc as erros_sql, select
 
 from stratum import VERSAO, avisos, config, db, export
 from stratum import fontes as catalogo
@@ -61,6 +61,8 @@ def rodar(engine, fontes: list[dict], session, cfg: config.Config, agora=db.agor
 def erro_legivel(exc: Exception) -> str:
     """Mensagem curta para a tela Método. O nome técnico fica entre parênteses para quem for consertar."""
     nome = type(exc).__name__
+    if isinstance(exc, erros_sql.SQLAlchemyError):  # a mensagem do banco pode conter dados da conexão (regra 12)
+        return f"Falha ao gravar no banco ({nome})."
     if isinstance(exc, requests.Timeout):
         return f"O site demorou demais para responder ({nome})."
     if isinstance(exc, (requests.ConnectionError, ConnectionError)):
@@ -113,22 +115,28 @@ def main(argv=None) -> int:
     p.add_argument("--exportar", help="grava o status para o site neste caminho (JSON)")
     args = p.parse_args(argv)
     cfg = config.ler()
-    print(f"Stratum Global {VERSAO}. Banco: {'permanente' if cfg.banco_permanente else 'temporário (DATABASE_URL não configurado)'}.")
+    print(f"Stratum Global {VERSAO}. Banco: {'permanente' if cfg.banco_permanente else 'temporário (segredo SUPABASE_SENHA não configurado)'}.")
 
     try:
         engine = db.conectar(cfg.database_url)
         db.preparar(engine)
     except Exception as exc:  # nunca imprime a mensagem crua: ela pode conter dados da conexão
-        print(f"Banco indisponível ({type(exc).__name__}). Confira o DATABASE_URL nos Secrets do repositório.")
+        print(f"Banco indisponível ({type(exc).__name__}). Confira a senha (SUPABASE_SENHA) nos Secrets do repositório.")
         if args.exportar:
             export.escrever_falha_banco(args.exportar, type(exc).__name__)
         return 1
 
-    resultado = rodar(engine, catalogo.FONTES, rss.nova_sessao(), cfg)
-    print(f"Rodada {resultado.rodada_id}: {resultado.situacao}, {resultado.novos} documentos novos.")
-    avisar_mudanca(situacao_anterior(engine, resultado.rodada_id), resultado, lambda t: avisos.enviar(t, cfg))
-    if args.exportar:
-        export.escrever(engine, args.exportar)
+    try:
+        resultado = rodar(engine, catalogo.FONTES, rss.nova_sessao(), cfg)
+        print(f"Rodada {resultado.rodada_id}: {resultado.situacao}, {resultado.novos} documentos novos.")
+        avisar_mudanca(situacao_anterior(engine, resultado.rodada_id), resultado, lambda t: avisos.enviar(t, cfg))
+        if args.exportar:
+            export.escrever(engine, args.exportar)
+    except erros_sql.SQLAlchemyError as exc:  # o banco caiu no meio da rodada: o site diz isso, sem a mensagem crua
+        print(f"O banco falhou no meio da rodada ({type(exc).__name__}).")
+        if args.exportar:
+            export.escrever_falha_banco(args.exportar, type(exc).__name__)
+        return 1
     return 1 if resultado.situacao == "falhou" else 0
 
 
