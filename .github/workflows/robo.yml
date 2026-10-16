@@ -19,6 +19,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 14
+    outputs:
+      site_ligado: ${{ steps.pages.outputs.ligado }}
     steps:
       - uses: actions/checkout@v5
 
@@ -62,13 +64,29 @@ jobs:
       - uses: actions/upload-pages-artifact@v4
         with: { path: web/out }
 
+      - name: O site (GitHub Pages) está ligado?
+        id: pages
+        if: github.ref == 'refs/heads/main'
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          saida=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type 2>&1) || true
+          if echo "$saida" | grep -q "HTTP 404"; then
+            echo "ligado=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::O site ainda não foi ligado: Settings → Pages → Source: GitHub Actions (docs/configurar.md)."
+          elif [ "$saida" = "legacy" ]; then
+            echo "ligado=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::O site está ligado no modo antigo: em Settings → Pages, mude Source para GitHub Actions."
+          else
+            echo "ligado=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Manter o agendamento ativo (o GitHub desliga agendamentos após 60 dias sem atividade)
         if: github.ref == 'refs/heads/main'
         env: { GH_TOKEN: "${{ github.token }}" }
         run: gh api -X PUT "repos/$GITHUB_REPOSITORY/actions/workflows/robo.yml/enable" || echo "não foi possível renovar o agendamento"
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && needs.build.outputs.site_ligado == 'true'
     needs: build
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: "${{ steps.d.outputs.page_url }}" }

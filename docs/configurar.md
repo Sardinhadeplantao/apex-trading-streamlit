@@ -5,9 +5,10 @@ nunca cole em conversa (nem com o Claude), em arquivo ou em print.
 
 ## 1. Ligar o site
 
-No repositório do GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+1. Abra https://github.com/Sardinhadeplantao/apex-trading-streamlit/settings/pages
+2. Em **Build and deployment**, no campo **Source**, escolha **GitHub Actions**. (Salva sozinho; não há botão.)
 
-Pronto: a cada rodada o robô publica o site em https://sardinhadeplantao.github.io/geomonitor/
+Pronto: em até 15 minutos o robô publica o site em https://sardinhadeplantao.github.io/apex-trading-streamlit/
 
 ## 2. Criar o banco (Supabase, gratuito)
 

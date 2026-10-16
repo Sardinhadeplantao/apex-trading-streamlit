@@ -10,6 +10,9 @@ Uso pessoal no começo, talvez público depois. O dono não é programador, quer
 
 ## Decisão
 
+- **Repositório:** `apex-trading-streamlit`, que já está ligado ao Claude (a integração não pode criar repositórios novos).
+  O painel antigo foi guardado em `apex-antigo/`. Renomear o repositório depois não quebra nada:
+  o endereço do site é calculado a partir do nome.
 - **Robô:** GitHub Actions a cada 15 minutos, repositório público (minutos ilimitados e gratuitos).
 - **Banco:** PostgreSQL no Supabase, plano gratuito (500 MB). Notícias guardam título, link, trecho curto e datas;
   o texto inteiro fica na fonte (espaço e direitos autorais).

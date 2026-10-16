@@ -3,6 +3,8 @@
 Monitor de geopolítica e mercados globais. O usuário quer saber o que está acontecendo no mundo, se é verdade e se importa.
 O dono do projeto não é programador: explique em português simples, decida pelo que é melhor e diga o porquê.
 O plano está em `docs/plano.md`; as decisões, em `docs/decisoes/`.
+O projeto mora no repositório `apex-trading-streamlit` (já ligado ao Claude). A pasta `apex-antigo/` guarda um
+painel antigo que não faz parte do Geomonitor: não mexa nela.
 
 ## Como funciona
 

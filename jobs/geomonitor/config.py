@@ -2,7 +2,7 @@
 import os
 from dataclasses import dataclass
 
-USER_AGENT_PADRAO = "geomonitor/0.1 (+https://github.com/Sardinhadeplantao/geomonitor)"
+USER_AGENT_PADRAO = "geomonitor/0.1 (+https://github.com/Sardinhadeplantao/apex-trading-streamlit)"
 
 
 @dataclass(frozen=True)
