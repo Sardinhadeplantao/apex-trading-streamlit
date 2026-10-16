@@ -16,6 +16,11 @@ Cada fase entrega algo usável e termina num "pronto quando" verificável.
 
 ## Fase 1. Monitor (4 a 6 semanas)
 
+Já entregue: nome Stratum Global, página inicial no formato do esboço (globo, últimas atualizações, indicadores,
+cartões) e a regra de citação de países (dicionário com nomes, gentílicos, capitais e siglas; versão atual em `docs/decisoes/0003-regra-paises-0.2.md`).
+
+Falta:
+
 - Lista de fontes completa: oficiais (diários oficiais, sanções, chancelarias, ONU, UE), imprensa de vários blocos
   com o controle de cada veículo (privado, público, estatal) documentado com fonte, GDELT para volume.
 - Caminho do documento até o evento: idioma, tradução (Argos/Opus-MT), quase-duplicatas (MinHash),
@@ -23,7 +28,7 @@ Cada fase entrega algo usável e termina num "pronto quando" verificável.
 - Grau de confirmação (pista, relatado, corroborado, oficial, contestado) e importância calculados por regra.
 - Globo com eventos, lista de eventos, página do evento e do país, alertas por regra no Telegram, briefing extrativo.
 
-**Pronto quando:** você acompanha o mundo por uma semana só pelo Geomonitor.
+**Pronto quando:** você acompanha o mundo por uma semana só pelo Stratum Global.
 
 ## Fase 2. Mercados (3 a 4 semanas)
 

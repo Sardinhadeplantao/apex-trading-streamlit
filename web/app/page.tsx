@@ -1,21 +1,25 @@
-import Link from "next/link";
+import Atualizacoes from "@/components/Atualizacoes";
+import AvisoAtraso from "@/components/AvisoAtraso";
+import Cartoes from "@/components/Cartoes";
 import Globo from "@/components/Globo";
-import { dataHora, numero, situacao } from "@/lib/formatar";
+import Indicadores from "@/components/Indicadores";
+import Lateral from "@/components/Lateral";
+import { NIVEIS_PADRAO } from "@/lib/constantes";
 import { lerStatus } from "@/lib/status";
 
 export default function Inicio() {
   const status = lerStatus();
-  const rodada = status.ultima_rodada;
-  const sit = situacao(rodada?.situacao);
-  return (
-    <main className="inicio">
-      <Globo />
-      <Link href="/metodo/" className="robo-resumo">
-        <span className={`ponto ${sit.classe}`} aria-hidden />
-        {rodada
-          ? <>Robô: {sit.texto.toLowerCase()} · {dataHora(rodada.iniciada_em)} · {numero(status.totais.documentos_24h)} documentos em 24h</>
-          : <>Robô: ainda não rodou</>}
-      </Link>
+  const a = status.atencao;
+  return (<>
+    <AvisoAtraso ate={status.avisar_atraso_apos} gerado={status.gerado_em} />
+    <main className="painel-geral">
+      <Lateral atual="/" />
+      <section className="mapa-bloco bloco" aria-label="Mapa global">
+        <Globo paises={status.paises} niveis={a?.niveis ?? NIVEIS_PADRAO} janelaHoras={a?.janela_horas ?? 24} semDado={!a} />
+      </section>
+      <Indicadores status={status} />
+      <Atualizacoes documentos={status.ultimos_documentos.slice(0, 14)} />
+      <Cartoes status={status} />
     </main>
-  );
+  </>);
 }

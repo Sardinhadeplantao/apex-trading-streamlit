@@ -1,7 +1,7 @@
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 
-from geomonitor import db, fontes
+from stratum import db, fontes
 
 
 def test_migracoes_batem_com_o_esquema(engine):

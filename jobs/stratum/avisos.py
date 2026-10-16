@@ -1,12 +1,12 @@
 """Avisos pelo Telegram. Sem token configurado, nada é enviado e nada quebra.
 
-Teste manual:  python -m geomonitor.avisos teste
+Teste manual:  python -m stratum.avisos teste
 """
 import sys
 
 import requests
 
-from geomonitor import config
+from stratum import config
 
 API = "https://api.telegram.org/bot{token}/sendMessage"
 
@@ -35,8 +35,8 @@ if __name__ == "__main__":
         if not cfg.telegram_configurado:
             print("Telegram não configurado: faltam TELEGRAM_BOT_TOKEN e/ou TELEGRAM_CHAT_ID nos Secrets.")
             sys.exit(1)
-        ok = enviar("Geomonitor: o robô está conectado ao seu Telegram.", cfg)
+        ok = enviar("Stratum Global: o robô está conectado ao seu Telegram.", cfg)
         print("Mensagem de teste enviada." if ok else "Não foi possível enviar a mensagem de teste.")
         sys.exit(0 if ok else 1)
-    print("Uso: python -m geomonitor.avisos teste")
+    print("Uso: python -m stratum.avisos teste")
     sys.exit(2)

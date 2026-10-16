@@ -38,9 +38,15 @@ jobs:
         env:
           # Só a branch principal grava no banco de produção e manda avisos; as outras usam banco temporário
           DATABASE_URL: ${{ github.ref == 'refs/heads/main' && secrets.DATABASE_URL || '' }}
+          # Ou só a senha do Supabase (segredo SUPABASE_SENHA); servidor e usuário do projeto não são segredo
+          SUPABASE_SENHA: ${{ github.ref == 'refs/heads/main' && secrets.SUPABASE_SENHA || '' }}
+          SUPABASE_HOST: aws-0-us-east-2.pooler.supabase.com
+          SUPABASE_USUARIO: postgres.ojtlxyfrcahhoifrcqbc
           TELEGRAM_BOT_TOKEN: ${{ github.ref == 'refs/heads/main' && secrets.TELEGRAM_BOT_TOKEN || '' }}
           TELEGRAM_CHAT_ID: ${{ github.ref == 'refs/heads/main' && secrets.TELEGRAM_CHAT_ID || '' }}
-        run: python -m geomonitor.robo --exportar ../web/public/dados/status.json || echo "::warning::A rodada terminou com falhas. Veja a tela Método do site."
+          # Fora da main, imprime cada notícia com os países encontrados (para conferir a regra com dados reais)
+          STRATUM_DIAGNOSTICO: ${{ github.ref != 'refs/heads/main' && '1' || '' }}
+        run: python -m stratum.robo --exportar ../web/public/dados/status.json || echo "::warning::A rodada terminou com falhas. Veja a tela Método do site."
 
       - name: Teste do Telegram
         if: inputs.testar_telegram && github.ref == 'refs/heads/main'
@@ -48,7 +54,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python -m geomonitor.avisos teste
+        run: python -m stratum.avisos teste
 
       - uses: actions/setup-node@v5
         with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }

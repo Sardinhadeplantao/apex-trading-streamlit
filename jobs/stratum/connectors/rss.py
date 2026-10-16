@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 import feedparser
 import requests
 
-from geomonitor.connectors import Item
-from geomonitor.domain.documento import TAMANHO_RESUMO, limpar_texto
+from stratum.connectors import Item
+from stratum.domain.documento import TAMANHO_RESUMO, limpar_texto
 
 TEMPO_LIMITE = 20  # segundos
 

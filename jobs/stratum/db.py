@@ -82,7 +82,7 @@ def agora() -> datetime:
 def conectar(url: str | None):
     """Abre o banco. Sem URL, cria um SQLite temporário que some no fim da execução."""
     if not url:
-        caminho = os.path.join(tempfile.mkdtemp(prefix="geomonitor-"), "temporario.db")
+        caminho = os.path.join(tempfile.mkdtemp(prefix="stratum-"), "temporario.db")
         url = f"sqlite:///{caminho}"
     elif url.startswith("postgresql://") or url.startswith("postgres://"):
         url = "postgresql+psycopg://" + url.split("://", 1)[1]

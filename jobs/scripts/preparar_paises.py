@@ -1,16 +1,28 @@
-"""Gera web/public/geo/paises.geojson a partir do Natural Earth (domínio público).
+"""Gera web/public/geo/paises.geojson a partir do Natural Earth 1:50 milhões (domínio público).
 
 Uso (de dentro de jobs/):
-    curl -sSLo /tmp/ne.geojson https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson
+    curl -sSLo /tmp/ne.geojson https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson
     python scripts/preparar_paises.py /tmp/ne.geojson ../web/public/geo/paises.geojson
 
 Mantém só o que o site usa (códigos oficiais e nomes) e arredonda as coordenadas
 para o arquivo ficar leve. Rodar de novo com o mesmo arquivo de entrada gera o mesmo resultado.
+A escala 1:50m inclui países pequenos (Singapura, Bahrein, Malta) que a 1:110m não desenha.
 """
 import json
 import sys
 
 CASAS = 2  # ~1 km: suficiente para a escala 1:110 milhões
+
+# O Natural Earth traz vários nomes em português de Portugal ou longos demais. O site é para o Brasil.
+# O robô usa estes mesmos nomes (preparar_nomes_paises.py lê o mapa), então a tela mostra um nome só para cada país.
+NOMES_BR = {
+    "ALA": "Ilhas Åland", "ARM": "Armênia", "BEN": "Benin", "BLM": "São Bartolomeu", "CYM": "Ilhas Cayman",
+    "CZE": "Tchéquia", "EST": "Estônia", "ESH": "Saara Ocidental", "FRO": "Ilhas Faroé", "IRL": "Irlanda", "IRN": "Irã",
+    "KAS": "Geleira de Siachen", "KEN": "Quênia", "LVA": "Letônia", "MAF": "São Martinho (França)", "MCO": "Mônaco",
+    "MDG": "Madagascar", "MKD": "Macedônia do Norte", "MMR": "Mianmar", "MUS": "Maurício", "NCL": "Nova Caledônia",
+    "POL": "Polônia", "ROU": "Romênia", "SVN": "Eslovênia", "SXM": "São Martinho (Países Baixos)",
+    "TCA": "Ilhas Turks e Caicos", "VNM": "Vietnã", "YEM": "Iêmen",
+}
 
 
 def _codigo(p: dict, *campos: str) -> str | None:
@@ -27,27 +39,38 @@ def _arredondar(coords):
     return [_arredondar(c) for c in coords]
 
 
+def _poligonos(geometria: dict) -> list:
+    return [geometria["coordinates"]] if geometria["type"] == "Polygon" else geometria["coordinates"]
+
+
 def preparar(entrada: dict) -> dict:
-    saida, vistos = [], set()
+    # Partes do mesmo país (ex.: territórios da Austrália) viram um só país com várias áreas
+    grupos: dict[str, list[dict]] = {}
     for f in entrada["features"]:
+        iso = _codigo(f["properties"], "ISO_A3_EH", "ISO_A3", "ADM0_A3")  # sem ISO: usa o código do Natural Earth
+        grupos.setdefault(iso, []).append(f)
+    saida = []
+    for iso, partes in grupos.items():
+        f = next((x for x in partes if x["properties"].get("ISO_A3") == iso), partes[0])
         p = f["properties"]
-        iso = _codigo(p, "ISO_A3_EH", "ISO_A3", "ADM0_A3")  # alguns territórios não têm ISO; usa o código do Natural Earth
-        if iso in vistos:
-            raise ValueError(f"código repetido: {iso}")
-        vistos.add(iso)
+        if len(partes) > 1:
+            geometria = {"type": "MultiPolygon", "coordinates": [pol for x in partes for pol in _poligonos(x["geometry"])]}
+        else:
+            geometria = f["geometry"]
         saida.append({
             "type": "Feature",
             "properties": {
                 "iso": iso,
                 "iso_oficial": _codigo(p, "ISO_A3_EH", "ISO_A3") is not None,
                 "iso2": _codigo(p, "ISO_A2_EH", "ISO_A2"),
-                "nome": p.get("NAME_PT") or p.get("NAME"),
+                "nome": NOMES_BR.get(iso) or p.get("NAME_PT") or p.get("NAME"),
                 "nome_en": p.get("NAME_EN") or p.get("NAME"),
                 "wikidata": p.get("WIKIDATAID"),
                 "continente": p.get("CONTINENT"),
                 "regiao": p.get("SUBREGION"),
+                "centro": [round(p["LABEL_X"], 2), round(p["LABEL_Y"], 2)] if p.get("LABEL_X") is not None else None,
             },
-            "geometry": {"type": f["geometry"]["type"], "coordinates": _arredondar(f["geometry"]["coordinates"])},
+            "geometry": {"type": geometria["type"], "coordinates": _arredondar(geometria["coordinates"])},
         })
     saida.sort(key=lambda x: x["properties"]["iso"])
     return {"type": "FeatureCollection", "features": saida}

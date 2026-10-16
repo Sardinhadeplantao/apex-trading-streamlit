@@ -1,11 +1,10 @@
-# Geomonitor
+# Stratum Global
 
 Monitor de geopolítica e mercados globais: o que está acontecendo no mundo, com fonte e grau de confirmação,
 ligado ao que se mede nos mercados.
 
-**Site:** https://sardinhadeplantao.github.io/apex-trading-streamlit/
-
-O painel antigo de trading (APEX, em Streamlit) foi guardado em `apex-antigo/`.
+**Site:** https://sardinhadeplantao.github.io/stratum-global/ (depois que o repositório for renomeado para
+`stratum-global`; até lá, https://sardinhadeplantao.github.io/apex-trading-streamlit/)
 
 ## Como funciona
 
@@ -23,11 +22,15 @@ Custo: zero, dentro dos planos gratuitos do GitHub, Supabase e Telegram.
 
 ## Onde está cada coisa
 
-- `jobs/`: robô em Python (coleta, banco, status). Testes em `jobs/tests`.
+- `jobs/`: robô em Python (coleta, banco, citações de países, status). Testes em `jobs/tests`.
 - `web/`: site (Next.js estático + MapLibre).
 - `docs/plano.md`: as fases e o que conta como pronto.
 - `docs/configurar.md`: passo a passo para ligar banco, Telegram e site.
 - `docs/decisoes/`: decisões de projeto, com data e motivo.
 - `CLAUDE.md`: regras que toda sessão de IA segue ao mexer no projeto.
+
+Fronteiras: Natural Earth (domínio público). Termos e nomes de países: derivados de
+[mledoze/countries](https://github.com/mledoze/countries). O arquivo `jobs/stratum/dados/nomes_paises.json` é
+disponibilizado sob a [Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1.0/).
 
 *Informação de contexto baseada em fontes públicas. Não é recomendação de investimento.*

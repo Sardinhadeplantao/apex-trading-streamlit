@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 
-from geomonitor.connectors import rss
+from stratum.connectors import rss
 
 
 def test_interpreta_rss(feed_rss):
