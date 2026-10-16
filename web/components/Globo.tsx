@@ -7,25 +7,25 @@ import type { PaisAtencao } from "@/lib/status";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-/** Cor por nível de citações (calculado pelo robô). Nível 0 = nenhuma citação: cinza. */
-export const CORES_NIVEL = ["#333d4f", "#1f4f78", "#2a74aa", "#3f9bd2", "#94d3f3"];
+/** Cor por nível de citações (calculado pelo robô). Nível 0 = medido e nenhuma notícia: o azul mais escuro. */
+export const CORES_NIVEL = ["#22344d", "#1f4f78", "#2a74aa", "#3f9bd2", "#94d3f3"];
+const COR_SEM_DADO = "#5d6779"; // cinza: o robô não publicou contagem (mesma cor de --sem-dado)
 const COR_SELECAO = "#f5c451";
 const PREENCHIMENTO: ExpressionSpecification = [
   "match", ["coalesce", ["feature-state", "nivel"], 0],
   1, CORES_NIVEL[1], 2, CORES_NIVEL[2], 3, CORES_NIVEL[3], 4, CORES_NIVEL[4], CORES_NIVEL[0],
 ];
 
-type Item = { iso: string; nome: string; nome_en: string; centro: [number, number] | null };
-type Props = { paises: Record<string, PaisAtencao>; niveis: number[]; janelaHoras: number };
+type Props = { paises: Record<string, PaisAtencao>; niveis: number[]; janelaHoras: number; semDado: boolean };
 
-function estilo(plano: boolean): StyleSpecification {
+function estilo(plano: boolean, semDado: boolean): StyleSpecification {
   return {
     version: 8,
     projection: { type: plano ? "mercator" : "globe" },
     sources: { paises: { type: "geojson", data: `${BASE}/geo/paises.geojson`, promoteId: "iso" } },
     layers: [
       { id: "oceano", type: "background", paint: { "background-color": "#0b1829" } },
-      { id: "paises", type: "fill", source: "paises", paint: { "fill-color": PREENCHIMENTO } },
+      { id: "paises", type: "fill", source: "paises", paint: { "fill-color": semDado ? COR_SEM_DADO : PREENCHIMENTO } },
       { id: "fronteiras", type: "line", source: "paises", paint: { "line-color": "#5f6f8c", "line-width": 0.5 } },
       {
         id: "selecao", type: "line", source: "paises",
@@ -46,22 +46,21 @@ function isoDoHash(): string | null {
   return m ? m[1] : null;
 }
 
-export default function Globo({ paises, niveis, janelaHoras }: Props) {
+export default function Globo({ paises, niveis, janelaHoras, semDado }: Props) {
   const caixa = useRef<HTMLDivElement>(null);
   const mapaRef = useRef<Mapa | null>(null);
   const selecionadoRef = useRef<string | null>(null);
-  const [lista, setLista] = useState<Item[]>([]);
+  const [lista, setLista] = useState<Pais[]>([]);
   const [pais, setPais] = useState<Pais | null>(null);
-  const [sobre, setSobre] = useState<{ nome: string; citacoes: number } | null>(null);
+  const [sobre, setSobre] = useState<{ nome: string; iso: string } | null>(null);
   const [busca, setBusca] = useState("");
   const [erro, setErro] = useState(false);
+  const [camadaLigada, setCamadaLigada] = useState(true);
 
-  // Lista de países para a busca e para centralizar o globo (mesmo arquivo do mapa; o navegador reaproveita)
+  // Países para a busca, para o painel e para centralizar o globo (mesmo arquivo do mapa; o navegador reaproveita)
   useEffect(() => {
     fetch(`${BASE}/geo/paises.geojson`).then((r) => r.json()).then((geo) => {
-      setLista(geo.features.map((f: { properties: Pais }) => ({
-        iso: f.properties.iso, nome: f.properties.nome, nome_en: f.properties.nome_en, centro: f.properties.centro ?? null,
-      })));
+      setLista(geo.features.map((f: { properties: Pais }) => f.properties));
     }).catch(() => setErro(true));
   }, []);
   const porIso = useMemo(() => new Map(lista.map((i) => [i.iso, i])), [lista]);
@@ -82,9 +81,8 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
       return;
     }
     if (window.location.hash !== `#pais=${iso}`) history.replaceState(null, "", `#pais=${iso}`);
-    const feicao = mapaRef.current?.querySourceFeatures("paises", { filter: ["==", ["get", "iso"], iso] })[0];
     const item = porIso.get(iso);
-    setPais(feicao ? (feicao.properties as Pais) : item ? ({ iso, nome: item.nome, nome_en: item.nome_en } as Pais) : null);
+    setPais(item ?? null);
     if (voar && item?.centro) mapaRef.current?.flyTo({ center: item.centro, zoom: Math.max(mapaRef.current.getZoom(), 2.6) });
   }
   const selecionarRef = useRef(selecionar);
@@ -99,7 +97,7 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
       const plano = window.matchMedia("(max-width: 760px)").matches;
       const mapa = new maplibregl.Map({
         container: caixa.current,
-        style: estilo(plano),
+        style: estilo(plano, semDado),
         center: [20, 25],
         zoom: plano ? 0.3 : 1.45,
         attributionControl: { compact: true, customAttribution: "Fronteiras: Natural Earth" },
@@ -114,7 +112,7 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
         mapa.getCanvas().style.cursor = "pointer";
         const iso = e.features?.[0]?.properties?.iso as string | undefined;
         const nome = e.features?.[0]?.properties?.nome as string | undefined;
-        setSobre(nome && iso ? { nome, citacoes: paises[iso]?.citacoes ?? 0 } : null);
+        setSobre(nome && iso ? { nome, iso } : null);
       });
       mapa.on("mouseleave", "paises", () => { mapa.getCanvas().style.cursor = ""; setSobre(null); });
       mapa.on("click", (e) => {
@@ -129,7 +127,10 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
       const mapa = mapaRef.current;
       const { id, ligada } = (e as CustomEvent<{ id: string; ligada: boolean }>).detail;
       if (!mapa) return;
-      if (id === "citacoes") mapa.setPaintProperty("paises", "fill-color", ligada ? PREENCHIMENTO : CORES_NIVEL[0]);
+      if (id === "citacoes") {
+        setCamadaLigada(ligada);
+        mapa.setPaintProperty("paises", "fill-color", ligada && !semDado ? PREENCHIMENTO : COR_SEM_DADO);
+      }
       if (id === "fronteiras") mapa.setLayoutProperty("fronteiras", "visibility", ligada ? "visible" : "none");
     };
     window.addEventListener("hashchange", aoMudarHash);
@@ -141,7 +142,7 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
       mapaRef.current?.remove();
       mapaRef.current = null;
     };
-  }, [paises]);
+  }, [paises, semDado]);
 
   const sugestoes = useMemo(() => {
     const q = semAcento(busca.trim());
@@ -157,6 +158,8 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
   }
 
   const rotulos = faixas(niveis);
+  const medido = camadaLigada && !semDado;
+  const citacoes = (iso: string) => paises[iso]?.citacoes ?? 0;  // com contagem publicada, país ausente = zero medido
   return (
     <div className="globo">
       <div ref={caixa} className="globo-mapa" aria-label="Globo. Clique num país ou use a busca para ver o painel." />
@@ -175,7 +178,7 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
             {sugestoes.map((s) => (
               <li key={s.iso}>
                 <button type="button" onClick={() => escolher(s.iso)}>
-                  {s.nome} <span className="discreto">{s.iso}{paises[s.iso] ? ` · ${paises[s.iso].citacoes}` : ""}</span>
+                  {s.nome} <span className="discreto">{s.iso}{medido && paises[s.iso] ? ` · ${paises[s.iso].citacoes}` : ""}</span>
                 </button>
               </li>
             ))}
@@ -185,13 +188,24 @@ export default function Globo({ paises, niveis, janelaHoras }: Props) {
       <div className="legenda" aria-label="Legenda">
         <span className="rotulo">Notícias que citam o país ({janelaHoras} h)</span>
         <div className="legenda-faixas">
-          <span><i style={{ background: CORES_NIVEL[0] }} />0</span>
-          {rotulos.map((r, i) => <span key={r}><i style={{ background: CORES_NIVEL[i + 1] }} />{r}</span>)}
+          {medido ? (<>
+            <span><i style={{ background: CORES_NIVEL[0] }} />0</span>
+            {rotulos.map((r, i) => <span key={r}><i style={{ background: CORES_NIVEL[i + 1] }} />{r}</span>)}
+          </>) : (
+            <span><i style={{ background: COR_SEM_DADO }} />{semDado ? "Sem dado: o robô não publicou a contagem" : "Camada desligada"}</span>
+          )}
         </div>
       </div>
-      {sobre && !pais && <div className="globo-dica">{sobre.nome} · {sobre.citacoes} {sobre.citacoes === 1 ? "notícia" : "notícias"}</div>}
+      {sobre && !pais && (
+        <div className="globo-dica">
+          {sobre.nome}{medido ? ` · ${citacoes(sobre.iso)} ${citacoes(sobre.iso) === 1 ? "notícia" : "notícias"}` : semDado ? " · sem dado" : ""}
+        </div>
+      )}
       {erro && <div className="globo-erro">Não foi possível carregar o mapa. Recarregue a página.</div>}
-      {pais && <PainelPais pais={pais} atencao={paises[pais.iso] ?? null} janelaHoras={janelaHoras} fechar={() => selecionar(null, false)} />}
+      {pais && (
+        <PainelPais pais={pais} atencao={paises[pais.iso] ?? null} janelaHoras={janelaHoras} semDado={semDado}
+                    fechar={() => selecionar(null, false)} />
+      )}
     </div>
   );
 }

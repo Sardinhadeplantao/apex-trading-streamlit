@@ -1,4 +1,5 @@
-import { dataHora, faixas, numero, situacao, tipoFonte } from "@/lib/formatar";
+import AvisoAtraso from "@/components/AvisoAtraso";
+import { dataHora, faixas, numero, plural, situacao, tipoFonte } from "@/lib/formatar";
 import { lerStatus, type Fonte } from "@/lib/status";
 
 export const metadata = { title: "Método · Stratum Global" };
@@ -24,7 +25,8 @@ export default function Metodo() {
   const sit = situacao(rodada?.situacao);
   const a = s.atencao;
   const criterios = agruparCriterios(s.fontes.filter((f) => f.ativa));
-  return (
+  return (<>
+    <AvisoAtraso ate={s.avisar_atraso_apos} gerado={s.gerado_em} />
     <main className="pagina">
       <h1>Método</h1>
       <p className="lead">Posso confiar? Esta página mostra como o Stratum Global funciona, o que ele mede e o que ainda não mede.</p>
@@ -46,15 +48,24 @@ export default function Metodo() {
         <h2>Como contamos as citações de países</h2>
         <p>
           O globo pinta cada país pela quantidade de notícias que o citam, entre as publicadas nas últimas{" "}
-          {a?.janela_horas ?? 24} horas pelas fontes acompanhadas. Uma notícia cita um país quando o título ou o resumo traz
-          o nome dele (em inglês ou português), o gentílico em inglês (como <i>Russian</i>), a capital, uma sigla aceita
-          (US, UK, EUA, UAE) ou uma referência direta ao governo (Kremlin, Casa Branca).
+          {a?.janela_horas ?? 24} horas pelas fontes acompanhadas. Uma notícia cita um país quando o título ou o resumo traz:
         </p>
+        <ul className="regras">
+          <li>o nome dele, em inglês ou português;</li>
+          <li>o gentílico (<i>Russian</i>, <i>russo</i>; em português, só dos países mais presentes no noticiário);</li>
+          <li>a capital, um estado dos EUA ou uma cidade que só existe naquele país (<i>Oregon</i>, <i>Áden</i>);</li>
+          <li>uma sigla aceita (US, UK, EUA, UAE);</li>
+          <li>ou uma referência direta ao governo (Kremlin, Casa Branca).</li>
+        </ul>
+        <p>Cuidados da regra:</p>
         <ul className="regras">
           <li>Cada notícia conta uma vez por país, mesmo que cite o país várias vezes.</li>
           <li>Diferencia maiúsculas: <i>Turkey</i> é país, <i>turkey</i> não. Nome dentro de outra palavra não conta (<i>Niger</i> em <i>Nigeria</i>).</li>
-          <li>O termo mais longo vence: <i>Papua New Guinea</i> não conta Guiné; <i>Latin American</i> não conta os Estados Unidos.</li>
-          <li>Citação mede atenção da imprensa e dos governos, não importância nem gravidade.</li>
+          <li>O termo mais longo vence: <i>Papua New Guinea</i> não conta Guiné; <i>South Americans</i> não conta os Estados Unidos.</li>
+          <li>Sedes internacionais não contam o país: <i>Bruxelas</i> quase sempre quer dizer a União Europeia, e <i>Haia</i>, os tribunais.</li>
+          <li>Nomes de pessoas não contam: uma notícia que só fala de Netanyahu não conta Israel.</li>
+          <li>Notícias de rede social nunca entram na conta (são pista, não fato).</li>
+          <li>Citação mede a atenção das fontes acompanhadas, não importância nem gravidade.</li>
           <li>A regra pode errar. Toda contagem leva às notícias, para conferir.</li>
         </ul>
         {a && (
@@ -62,8 +73,11 @@ export default function Metodo() {
             <dt>Versão da regra</dt><dd>{a.regra}</dd>
             <dt>Faixas de cor</dt><dd>{faixas(a.niveis).join(" · ")} notícias</dd>
             <dt>Nesta rodada</dt>
-            <dd>{numero(a.documentos)} notícias na janela, {numero(a.documentos_com_pais)} citam algum país, {numero(a.paises_citados)} países citados</dd>
-            <dt>Termos ignorados</dt><dd>{a.ignorados.join(", ")} (apontam para mais de um lugar ou pessoa)</dd>
+            <dd>
+              {plural(a.documentos, "notícia", "notícias")} na janela, {numero(a.documentos_com_pais)} com algum país,{" "}
+              {plural(a.paises_citados, "país citado", "países citados")}
+            </dd>
+            <dt>Termos ignorados</dt><dd>{a.ignorados.join(", ")} (apontam para mais de um lugar, para uma pessoa ou para uma sede internacional)</dd>
           </dl>
         )}
       </section>
@@ -135,7 +149,7 @@ export default function Metodo() {
               <li key={i}>
                 {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.titulo}</a> : d.titulo}
                 <div className="discreto">
-                  {d.fonte_nome} · publicado {dataHora(d.publicado_em)} · coletado {dataHora(d.conhecido_em)}
+                  {d.fonte_nome} · {d.publicado_em ? `publicado ${dataHora(d.publicado_em)}` : "sem data da fonte"} · coletado {dataHora(d.conhecido_em)}
                   {d.paises && d.paises.length > 0 && <> · cita {d.paises.map((p) => p.nome).join(", ")}</>}
                 </div>
               </li>
@@ -155,9 +169,13 @@ export default function Metodo() {
       </section>
 
       <p className="discreto rodape">
-        Status gerado em {dataHora(s.gerado_em)}. Fronteiras: Natural Earth. Nomes de países: mledoze/countries (licença ODbL).
+        Status gerado em {dataHora(s.gerado_em)}. Fronteiras: <a href="https://www.naturalearthdata.com/" target="_blank" rel="noreferrer">Natural Earth</a> (domínio
+        público). Termos e nomes de países: derivados de{" "}
+        <a href="https://github.com/mledoze/countries" target="_blank" rel="noreferrer">mledoze/countries</a>, sob a licença{" "}
+        <a href="https://opendatacommons.org/licenses/odbl/1.0/" target="_blank" rel="noreferrer">ODbL 1.0</a>; o arquivo derivado
+        (jobs/stratum/dados/nomes_paises.json) fica sob a mesma licença.
         Informação de contexto; não é recomendação de investimento.
       </p>
     </main>
-  );
+  </>);
 }

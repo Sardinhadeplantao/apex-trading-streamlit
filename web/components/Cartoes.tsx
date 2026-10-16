@@ -1,4 +1,4 @@
-import { diaHora, numero, plural } from "@/lib/formatar";
+import { datasDocumento, numero, plural } from "@/lib/formatar";
 import type { Status } from "@/lib/status";
 
 const PROXIMAS = [
@@ -9,7 +9,10 @@ const PROXIMAS = [
   { fase: "Fase 5", texto: "Cadeias industriais, simulação de choque e hipóteses com placar" },
 ];
 
+const SEM_DADO = <p className="sem-dado-texto">Sem dado nesta atualização.</p>;
+
 export default function Cartoes({ status }: { status: Status }) {
+  const medido = status.atencao !== null;  // sem contagem publicada, não há zero: há sem dado
   const janela = status.atencao?.janela_horas ?? 24;
   const topo = status.mais_citados[0];
   const destaque = topo ? status.paises[topo.iso] : null;
@@ -17,7 +20,7 @@ export default function Cartoes({ status }: { status: Status }) {
     <section className="cartoes" aria-label="Destaques">
       <article className="cartao bloco">
         <h2 className="rotulo">Mais citados em {janela} h</h2>
-        {status.mais_citados.length === 0 ? <p className="sem-dado-texto">Nenhum país citado na janela.</p> : (
+        {!medido ? SEM_DADO : status.mais_citados.length === 0 ? <p>Nenhum país citado na janela.</p> : (
           <ol className="barras">
             {status.mais_citados.map((p) => (
               <li key={p.iso}>
@@ -39,17 +42,20 @@ export default function Cartoes({ status }: { status: Status }) {
             {destaque.documentos.slice(0, 3).map((d, i) => (
               <li key={i}>
                 {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.titulo}</a> : d.titulo}
-                <div className="discreto">{d.fonte_nome} · {diaHora(d.publicado_em ?? d.conhecido_em)}</div>
+                <div className="discreto">{d.fonte_nome} · {datasDocumento(d.publicado_em, d.conhecido_em)}</div>
               </li>
             ))}
           </ul>
-        </>) : <p className="sem-dado-texto">Sem país citado na janela.</p>}
+        </>) : !medido ? SEM_DADO : <p>Nenhum país citado na janela.</p>}
       </article>
 
       <article className="cartao bloco">
         <h2 className="rotulo">Quem está falando</h2>
-        <p className="discreto">Notícias em {janela} h pelo país de cada fonte. Comparar blocos mostra quem pauta o assunto.</p>
-        {status.origem_fontes.length === 0 ? <p className="sem-dado-texto">Sem notícias na janela.</p> : (
+        <p className="discreto">
+          Notícias em {janela} h pelo país de cada fonte. Há um veículo por país: a barra mostra quanto cada um publica,
+          não quem pauta o assunto.
+        </p>
+        {!medido ? SEM_DADO : status.origem_fontes.length === 0 ? <p>Nenhuma notícia na janela.</p> : (
           <ol className="barras">
             {status.origem_fontes.map((o) => (
               <li key={o.pais ?? "internacional"}>

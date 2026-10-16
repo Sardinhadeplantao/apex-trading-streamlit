@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { continente, dataHora, diaHora, faixas, hora, plural, situacao, tipoFonte } from "./formatar.ts";
+import { continente, dataHora, datasDocumento, diaHora, faixas, hora, plural, situacao, tipoFonte } from "./formatar.ts";
 
 test("datas em horário de Brasília", () => {
   assert.equal(dataHora("2026-10-16T10:30:00Z"), "16/10/2026, 07:30");
@@ -8,6 +8,11 @@ test("datas em horário de Brasília", () => {
   assert.equal(hora("2026-10-16T10:30:00Z"), "07:30");
   assert.equal(dataHora(null), "—");
   assert.equal(hora("não é data"), "—");
+});
+
+test("notícia mostra as duas datas; sem data da fonte, diz isso", () => {
+  assert.equal(datasDocumento("2026-10-16T10:30:00Z", "2026-10-16T10:52:00Z"), "publicado 16/10, 07:30 · coletado 16/10, 07:52");
+  assert.equal(datasDocumento(null, "2026-10-16T10:52:00Z"), "sem data da fonte · coletado 16/10, 07:52");
 });
 
 test("situação desconhecida aparece como sem dado (cinza)", () => {

@@ -1,9 +1,10 @@
 """Gera o status.json que o site mostra. O site não calcula nada: só lê este arquivo."""
 import json
 import os
+import unicodedata
 from datetime import timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from stratum import VERSAO, db
 from stratum.domain import paises
@@ -14,10 +15,14 @@ RODADAS_RECENTES = 24
 
 # Citações de países: quantas notícias publicadas na janela citam cada país (regra em domain/paises.py)
 JANELA_HORAS = 24
-TOLERANCIA_FUTURO = timedelta(hours=1)  # feeds com relógio adiantado; além disso a data é ignorada
+TOLERANCIA_FUTURO = timedelta(hours=1)  # feeds com relógio adiantado; além disso, vale a hora da coleta
 NIVEIS = (1, 3, 10, 30)                  # 1-2 citações = nível 1; 3-9 = 2; 10-29 = 3; 30 ou mais = 4
 DOCUMENTOS_POR_PAIS = 5
 MAIS_CITADOS = 8
+NAO_CONTA = {"social"}  # rede social é pista, nunca entra em conta (regra 4)
+
+# O site é refeito a cada rodada. Se passar disto sem rodada nova, ele avisa que os dados estão parados
+AVISAR_ATRASO_APOS = timedelta(hours=2)
 
 
 def _iso(d):
@@ -28,11 +33,22 @@ def nivel(citacoes: int) -> int:
     return sum(1 for limite in NIVEIS if citacoes >= limite)
 
 
+def _quando(momento):
+    """Quando a notícia saiu: a data da fonte; sem ela, ou adiantada demais, a hora da coleta."""
+    publicado, conhecido = db.documento.c.publicado_em, db.documento.c.conhecido_em
+    return case((publicado.is_(None), conhecido), (publicado > momento + TOLERANCIA_FUTURO, conhecido), else_=publicado)
+
+
+def _ordem_alfabetica(nome: str) -> str:
+    """Índia antes de Zâmbia: ordena sem acento."""
+    return unicodedata.normalize("NFD", nome).encode("ascii", "ignore").decode().casefold()
+
+
 def montar(engine, agora=db.agora) -> dict:
     momento = agora()
     limite_24h = momento - timedelta(hours=24)
     inicio_janela = momento - timedelta(hours=JANELA_HORAS)
-    quando = func.coalesce(db.documento.c.publicado_em, db.documento.c.conhecido_em)  # sem data da fonte, vale a da coleta
+    quando = _quando(momento)
     with engine.connect() as c:
         ultima = c.execute(select(db.rodada).order_by(db.rodada.c.id.desc()).limit(1)).mappings().first()
         recentes = c.execute(select(db.rodada.c.iniciada_em, db.rodada.c.situacao)
@@ -49,11 +65,10 @@ def montar(engine, agora=db.agora) -> dict:
                                        .group_by(db.documento.c.fonte_id)).all())
         fontes = c.execute(select(db.fonte).order_by(db.fonte.c.tipo, db.fonte.c.nome)).mappings().all()
         janela = c.execute(select(db.documento, quando.label("quando"))
-                           .where(quando >= inicio_janela, quando <= momento + TOLERANCIA_FUTURO)
+                           .where(quando >= inicio_janela)
                            .order_by(quando.desc(), db.documento.c.id.desc())).mappings().all()
         if len(janela) < ULTIMOS_DOCUMENTOS:  # janela curta (fontes paradas): mostra os mais recentes mesmo assim
             ultimos = c.execute(select(db.documento, quando.label("quando"))
-                                .where(quando <= momento + TOLERANCIA_FUTURO)
                                 .order_by(quando.desc(), db.documento.c.id.desc()).limit(ULTIMOS_DOCUMENTOS)).mappings().all()
         else:
             ultimos = janela[:ULTIMOS_DOCUMENTOS]
@@ -77,7 +92,8 @@ def montar(engine, agora=db.agora) -> dict:
     documentos_do_pais: dict[str, list] = {}
     origem: dict[str | None, int] = {}
     com_pais = oficiais = 0
-    for d in janela:  # do mais recente para o mais antigo
+    contaveis = [d for d in janela if (por_fonte.get(d["fonte_id"]) or {}).get("tipo") not in NAO_CONTA]
+    for d in contaveis:  # do mais recente para o mais antigo
         isos = citados(d)
         com_pais += bool(isos)
         f = por_fonte.get(d["fonte_id"]) or {}
@@ -89,7 +105,7 @@ def montar(engine, agora=db.agora) -> dict:
             if len(lista) < DOCUMENTOS_POR_PAIS:
                 lista.append(resumo_documento(d))
     maximo = max(contagem.values(), default=0)
-    ranking = sorted(contagem.items(), key=lambda kv: (-kv[1], dicionario.nome(kv[0]) or kv[0]))
+    ranking = sorted(contagem.items(), key=lambda kv: (-kv[1], _ordem_alfabetica(dicionario.nome(kv[0]) or kv[0]), kv[0]))
 
     lista_fontes = []
     for f in fontes:
@@ -108,6 +124,7 @@ def montar(engine, agora=db.agora) -> dict:
         "versao_formato": VERSAO_FORMATO,
         "versao_robo": VERSAO,
         "gerado_em": _iso(momento),
+        "avisar_atraso_apos": _iso(momento + AVISAR_ATRASO_APOS),
         "banco": ultima["banco"] if ultima else None,
         "erro_banco": None,
         "ultima_rodada": None if ultima is None else {
@@ -128,7 +145,7 @@ def montar(engine, agora=db.agora) -> dict:
             "inicio": _iso(inicio_janela),
             "fim": _iso(momento),
             "niveis": list(NIVEIS),
-            "documentos": len(janela),
+            "documentos": len(contaveis),
             "documentos_com_pais": com_pais,
             "oficiais": oficiais,
             "paises_citados": len(contagem),
@@ -153,17 +170,17 @@ def _gravar_json(caminho: str, dados: dict) -> None:
 def diagnostico(engine, agora=db.agora) -> list[str]:
     """Uma linha por notícia da janela com os países encontrados, para conferir a regra com manchetes reais."""
     momento = agora()
-    quando = func.coalesce(db.documento.c.publicado_em, db.documento.c.conhecido_em)
+    quando = _quando(momento)
     with engine.connect() as c:
         docs = c.execute(select(db.documento.c.fonte_id, db.documento.c.titulo, db.documento.c.resumo)
-                         .where(quando >= momento - timedelta(hours=JANELA_HORAS), quando <= momento + TOLERANCIA_FUTURO)
+                         .where(quando >= momento - timedelta(hours=JANELA_HORAS))
                          .order_by(db.documento.c.fonte_id, db.documento.c.id)).all()
     dicionario = paises.carregar()
     linhas = []
     for fonte_id, titulo, resumo in docs:
-        texto = f"{titulo}\n{resumo or ''}"
-        termos = sorted({m.group(0) for m in dicionario.padrao.finditer(texto)})
-        isos = sorted(paises.citados(texto, dicionario))
+        achados = paises.encontrados(f"{titulo}\n{resumo or ''}", dicionario)
+        termos = sorted({t for t, _ in achados})
+        isos = sorted({iso for _, iso in achados if iso})
         linhas.append(f"[{','.join(isos) or '-'}] ({'; '.join(termos)}) {fonte_id}: {titulo} || {(resumo or '')[:160]}")
     return linhas
 
@@ -185,7 +202,8 @@ def escrever(engine, caminho: str) -> None:
 def escrever_falha_banco(caminho: str, tipo_erro: str) -> None:
     """Quando o banco não abre, o site ainda é publicado e diz isso."""
     _gravar_json(caminho, {
-        "versao_formato": VERSAO_FORMATO, "versao_robo": VERSAO, "gerado_em": _iso(db.agora()), "banco": "erro",
+        "versao_formato": VERSAO_FORMATO, "versao_robo": VERSAO, "gerado_em": _iso(db.agora()),
+        "avisar_atraso_apos": _iso(db.agora() + AVISAR_ATRASO_APOS), "banco": "erro",
         "erro_banco": f"Não foi possível abrir o banco ({tipo_erro}).", "ultima_rodada": None, "rodadas_recentes": [],
         "totais": {"documentos": 0, "documentos_24h": 0, "fontes": 0, "fontes_ok": 0}, "fontes": [], "ultimos_documentos": [],
         "atencao": None, "paises": {}, "mais_citados": [], "origem_fontes": [],

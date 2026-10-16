@@ -23,6 +23,7 @@ export type Status = {
   versao_formato: number;
   versao_robo: string | null;
   gerado_em: string | null;
+  avisar_atraso_apos?: string | null;
   banco: "permanente" | "temporario" | "erro" | null;
   erro_banco: string | null;
   ultima_rodada: { id: number; iniciada_em: string | null; terminada_em: string | null; situacao: string } | null;
@@ -37,7 +38,7 @@ export type Status = {
 };
 
 const VAZIO: Status = {
-  versao_formato: 2, versao_robo: null, gerado_em: null, banco: null, erro_banco: null, ultima_rodada: null,
+  versao_formato: 2, versao_robo: null, gerado_em: null, avisar_atraso_apos: null, banco: null, erro_banco: null, ultima_rodada: null,
   rodadas_recentes: [], totais: { documentos: 0, documentos_24h: 0, fontes: 0, fontes_ok: 0 }, fontes: [], ultimos_documentos: [],
   atencao: null, paises: {}, mais_citados: [], origem_fontes: [],
 };

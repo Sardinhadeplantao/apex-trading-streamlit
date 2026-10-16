@@ -13,6 +13,17 @@ import sys
 
 CASAS = 2  # ~1 km: suficiente para a escala 1:110 milhões
 
+# O Natural Earth traz vários nomes em português de Portugal ou longos demais. O site é para o Brasil.
+# O robô usa estes mesmos nomes (preparar_nomes_paises.py lê o mapa), então a tela mostra um nome só para cada país.
+NOMES_BR = {
+    "ALA": "Ilhas Åland", "ARM": "Armênia", "BEN": "Benin", "BLM": "São Bartolomeu", "CYM": "Ilhas Cayman",
+    "CZE": "Tchéquia", "EST": "Estônia", "ESH": "Saara Ocidental", "FRO": "Ilhas Faroé", "IRL": "Irlanda", "IRN": "Irã",
+    "KAS": "Geleira de Siachen", "KEN": "Quênia", "LVA": "Letônia", "MAF": "São Martinho (França)", "MCO": "Mônaco",
+    "MDG": "Madagascar", "MKD": "Macedônia do Norte", "MMR": "Mianmar", "MUS": "Maurício", "NCL": "Nova Caledônia",
+    "POL": "Polônia", "ROU": "Romênia", "SVN": "Eslovênia", "SXM": "São Martinho (Países Baixos)",
+    "TCA": "Ilhas Turks e Caicos", "VNM": "Vietnã", "YEM": "Iêmen",
+}
+
 
 def _codigo(p: dict, *campos: str) -> str | None:
     for c in campos:
@@ -52,7 +63,7 @@ def preparar(entrada: dict) -> dict:
                 "iso": iso,
                 "iso_oficial": _codigo(p, "ISO_A3_EH", "ISO_A3") is not None,
                 "iso2": _codigo(p, "ISO_A2_EH", "ISO_A2"),
-                "nome": p.get("NAME_PT") or p.get("NAME"),
+                "nome": NOMES_BR.get(iso) or p.get("NAME_PT") or p.get("NAME"),
                 "nome_en": p.get("NAME_EN") or p.get("NAME"),
                 "wikidata": p.get("WIKIDATAID"),
                 "continente": p.get("CONTINENT"),

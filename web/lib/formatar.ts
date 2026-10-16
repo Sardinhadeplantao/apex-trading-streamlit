@@ -25,6 +25,15 @@ export function diaHora(iso: string | null | undefined): string {
   return d ? DIA_HORA.format(d) : "—";
 }
 
+/**
+ * As duas datas de uma notícia (regra 1): quando a fonte publicou e quando o robô soube.
+ * Sem data da fonte, diz isso em vez de pôr a hora da coleta no lugar.
+ */
+export function datasDocumento(publicado: string | null | undefined, conhecido: string | null | undefined): string {
+  const fonte = data(publicado) ? `publicado ${diaHora(publicado)}` : "sem data da fonte";
+  return `${fonte} · coletado ${diaHora(conhecido)}`;
+}
+
 /** "07:30" no horário de Brasília. */
 export function hora(iso: string | null | undefined): string {
   const d = data(iso);

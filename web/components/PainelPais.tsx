@@ -1,4 +1,4 @@
-import { continente, diaHora, plural } from "@/lib/formatar";
+import { continente, datasDocumento, plural } from "@/lib/formatar";
 import type { PaisAtencao } from "@/lib/status";
 
 /** Propriedades de cada país em public/geo/paises.geojson (gerado por jobs/scripts/preparar_paises.py). */
@@ -7,9 +7,9 @@ export type Pais = {
   wikidata: string | null; continente: string | null; regiao: string | null; centro?: [number, number] | null;
 };
 
-type Props = { pais: Pais; atencao: PaisAtencao | null; janelaHoras: number; fechar: () => void };
+type Props = { pais: Pais; atencao: PaisAtencao | null; janelaHoras: number; semDado: boolean; fechar: () => void };
 
-export default function PainelPais({ pais, atencao, janelaHoras, fechar }: Props) {
+export default function PainelPais({ pais, atencao, janelaHoras, semDado, fechar }: Props) {
   return (
     <aside className="painel" aria-label={`Painel de ${pais.nome}`}>
       <div className="painel-topo">
@@ -21,8 +21,11 @@ export default function PainelPais({ pais, atencao, janelaHoras, fechar }: Props
       </div>
 
       <dl className="codigos">
-        <dt>{pais.iso_oficial === false ? "Código" : "ISO 3166"}</dt>
-        <dd>{pais.iso}{pais.iso2 ? ` · ${pais.iso2}` : ""}</dd>
+        <dt>{pais.iso_oficial ? "ISO 3166" : "Código"}</dt>
+        <dd>
+          {pais.iso}{pais.iso2 ? ` · ${pais.iso2}` : ""}
+          {!pais.iso_oficial && <span className="discreto"> (sem código ISO; código do Natural Earth)</span>}
+        </dd>
         {pais.continente && (<><dt>Continente</dt><dd>{continente(pais.continente)}</dd></>)}
         {pais.wikidata && (<>
           <dt>Wikidata</dt>
@@ -32,13 +35,15 @@ export default function PainelPais({ pais, atencao, janelaHoras, fechar }: Props
 
       <section>
         <h3>Nas últimas {janelaHoras} horas</h3>
-        {atencao ? (<>
+        {semDado ? (
+          <p className="sem-dado-texto">Sem dado nesta atualização: o robô não publicou a contagem.</p>
+        ) : atencao ? (<>
           <p className="destaque-numero">{plural(atencao.citacoes, "notícia cita", "notícias citam")} este país</p>
           <ul className="lista-noticias">
             {atencao.documentos.map((d, i) => (
               <li key={i}>
                 {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.titulo}</a> : d.titulo}
-                <div className="discreto">{d.fonte_nome} · {diaHora(d.publicado_em ?? d.conhecido_em)}</div>
+                <div className="discreto">{d.fonte_nome} · {datasDocumento(d.publicado_em, d.conhecido_em)}</div>
               </li>
             ))}
           </ul>
@@ -46,7 +51,7 @@ export default function PainelPais({ pais, atencao, janelaHoras, fechar }: Props
             <p className="discreto">Mostrando as {atencao.documentos.length} mais recentes.</p>
           )}
         </>) : (
-          <p className="sem-dado-texto">Nenhuma notícia das fontes acompanhadas cita este país nas últimas {janelaHoras} horas.</p>
+          <p>Nenhuma notícia das fontes acompanhadas cita este país nas últimas {janelaHoras} horas.</p>
         )}
       </section>
       <section>

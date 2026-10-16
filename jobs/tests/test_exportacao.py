@@ -27,24 +27,31 @@ def test_citacoes_por_pais_na_janela(engine, cfg):
         ("Russia strikes Ukrainian ports", "", AGORA - timedelta(hours=1)),
         ("Kremlin and Brazil sign deal", "", AGORA - timedelta(hours=3)),
         ("Old news about Russia", "", AGORA - timedelta(hours=30)),       # fora da janela de 24h
-        ("Russia from the future", "", AGORA + timedelta(hours=5)),       # data adiantada demais: ignorada
+        ("Russia from the future", "", AGORA + timedelta(hours=5)),       # data adiantada demais: vale a da coleta
         ("Weather report", "", AGORA - timedelta(hours=2)),
+        ("India exports rice", "", None),                                 # sem data da fonte: vale a da coleta
     ])
     oficial = _rss([("Treasury sanctions Iranian network", "", AGORA - timedelta(hours=4))], prefixo="oficial")
+    social = _rss([("Russia Russia Austria", "", AGORA - timedelta(hours=1))], prefixo="social")  # pista: não conta
     s = _rodar(engine, cfg, {
         "a": (fonte("imprensa_gbr", "https://a/feed", pais="GBR"), imprensa),
         "b": (fonte("oficial_usa", "https://b/feed", pais="USA", tipo="oficial"), oficial),
+        "c": (fonte("social_usa", "https://c/feed", pais="USA", tipo="social"), social),
     })
     a = s["atencao"]
-    assert a["documentos"] == 4 and a["documentos_com_pais"] == 3 and a["oficiais"] == 1 and a["paises_citados"] == 4
-    assert a["regra"].startswith("paises-") and "Georgia" in a["ignorados"]
+    assert a["documentos"] == 6 and a["documentos_com_pais"] == 5 and a["oficiais"] == 1 and a["paises_citados"] == 5
+    assert a["regra"] == "paises-0.2" and "Georgia" in a["ignorados"]
     rus = s["paises"]["RUS"]
-    assert rus["nome"] == "Rússia" and rus["citacoes"] == 2 and rus["nivel"] == 1
-    assert [d["titulo"] for d in rus["documentos"]] == ["Russia strikes Ukrainian ports", "Kremlin and Brazil sign deal"]
-    assert [p["iso"] for p in s["mais_citados"]] == ["RUS", "BRA", "IRN", "UKR"]  # empate: ordem alfabética do nome
-    assert s["mais_citados"][0]["proporcao"] == 1.0 and s["mais_citados"][1]["proporcao"] == 0.5
-    assert s["origem_fontes"] == [{"pais": "GBR", "nome": "Reino Unido", "documentos": 3, "proporcao": 1.0},
-                                  {"pais": "USA", "nome": "Estados Unidos", "documentos": 1, "proporcao": 0.3333}]
+    assert rus["nome"] == "Rússia" and rus["citacoes"] == 3 and rus["nivel"] == 2
+    assert [d["titulo"] for d in rus["documentos"]] == [
+        "Russia from the future", "Russia strikes Ukrainian ports", "Kremlin and Brazil sign deal"]
+    assert "AUT" not in s["paises"]
+    # empate: ordem alfabética sem acento (Índia vem antes de Irã e de Ucrânia)
+    assert [p["iso"] for p in s["mais_citados"]] == ["RUS", "BRA", "IND", "IRN", "UKR"]
+    assert s["mais_citados"][0]["proporcao"] == 1.0 and s["mais_citados"][1]["proporcao"] == 0.3333
+    assert s["origem_fontes"] == [{"pais": "GBR", "nome": "Reino Unido", "documentos": 5, "proporcao": 1.0},
+                                  {"pais": "USA", "nome": "Estados Unidos", "documentos": 1, "proporcao": 0.2}]
+    assert s["avisar_atraso_apos"] == "2026-10-16T14:00:00Z"
 
 
 def test_ultimos_documentos_mais_recentes_primeiro_com_paises(engine, cfg):

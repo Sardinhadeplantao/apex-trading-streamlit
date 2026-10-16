@@ -1,4 +1,4 @@
-import { hora, numero, situacao } from "@/lib/formatar";
+import { diaHora, numero, plural, situacao } from "@/lib/formatar";
 import type { Status } from "@/lib/status";
 
 type Indicador = { rotulo: string; valor: string; detalhe: string; semDado?: boolean; classe?: string };
@@ -11,11 +11,12 @@ export default function Indicadores({ status }: { status: Status }) {
     { rotulo: `Notícias em ${a?.janela_horas ?? 24} h`, valor: a ? numero(a.documentos) : "—",
       detalhe: "publicadas pelas fontes acompanhadas", semDado: !a },
     { rotulo: "Países citados", valor: a ? numero(a.paises_citados) : "—",
-      detalhe: a ? `${numero(a.documentos_com_pais)} notícias citam algum país` : "sem notícias na janela", semDado: !a },
-    { rotulo: `Oficiais em ${a?.janela_horas ?? 24} h`, valor: a ? numero(a.oficiais) : "—",
-      detalhe: "atos e comunicados de governos e da ONU", semDado: !a },
-    { rotulo: "Fontes funcionando", valor: `${status.totais.fontes_ok} de ${status.totais.fontes}`,
-      detalhe: rodada ? `última rodada às ${hora(rodada.iniciada_em)}` : "o robô ainda não rodou",
+      detalhe: a ? `${plural(a.documentos_com_pais, "notícia cita", "notícias citam")} algum país` : "sem dado", semDado: !a },
+    { rotulo: `Documentos oficiais em ${a?.janela_horas ?? 24} h`, valor: a ? numero(a.oficiais) : "—",
+      detalhe: "das fontes oficiais da lista (veja Método)", semDado: !a },
+    { rotulo: "Fontes funcionando", valor: rodada ? `${status.totais.fontes_ok} de ${status.totais.fontes}` : "—",
+      detalhe: rodada ? `última rodada em ${diaHora(rodada.iniciada_em)}`
+        : status.banco === "erro" ? "o banco não abriu nesta rodada" : "o robô ainda não rodou",
       classe: situacao(rodada?.situacao).classe, semDado: !rodada },
     { rotulo: "Mercados", valor: "—", detalhe: "moedas, juros e bolsas entram na fase 2", semDado: true },
   ];

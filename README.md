@@ -29,6 +29,8 @@ Custo: zero, dentro dos planos gratuitos do GitHub, Supabase e Telegram.
 - `docs/decisoes/`: decisões de projeto, com data e motivo.
 - `CLAUDE.md`: regras que toda sessão de IA segue ao mexer no projeto.
 
-Fronteiras: Natural Earth (domínio público). Nomes de países: mledoze/countries (licença ODbL).
+Fronteiras: Natural Earth (domínio público). Termos e nomes de países: derivados de
+[mledoze/countries](https://github.com/mledoze/countries). O arquivo `jobs/stratum/dados/nomes_paises.json` é
+disponibilizado sob a [Open Database License (ODbL) 1.0](https://opendatacommons.org/licenses/odbl/1.0/).
 
 *Informação de contexto baseada em fontes públicas. Não é recomendação de investimento.*

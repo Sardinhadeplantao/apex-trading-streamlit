@@ -17,7 +17,7 @@ Cada fase entrega algo usável e termina num "pronto quando" verificável.
 ## Fase 1. Monitor (4 a 6 semanas)
 
 Já entregue: nome Stratum Global, página inicial no formato do esboço (globo, últimas atualizações, indicadores,
-cartões) e a regra de citação de países `paises-0.1` (dicionário com nomes, gentílicos, capitais e siglas).
+cartões) e a regra de citação de países (dicionário com nomes, gentílicos, capitais e siglas; versão atual em `docs/decisoes/0003-regra-paises-0.2.md`).
 
 Falta:
 
