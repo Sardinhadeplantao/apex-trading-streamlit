@@ -1,10 +1,10 @@
-# Geomonitor
+# Stratum Global
 
 Monitor de geopolítica e mercados globais. O usuário quer saber o que está acontecendo no mundo, se é verdade e se importa.
 O dono do projeto não é programador: explique em português simples, decida pelo que é melhor e diga o porquê.
 O plano está em `docs/plano.md`; as decisões, em `docs/decisoes/`.
-O projeto mora no repositório `apex-trading-streamlit` (já ligado ao Claude). A pasta `apex-antigo/` guarda um
-painel antigo que não faz parte do Geomonitor: não mexa nela.
+O repositório ainda se chama `apex-trading-streamlit` e será renomeado para `stratum-global` pelo dono.
+O endereço do site acompanha o nome do repositório sozinho (o robô usa o nome atual).
 
 ## Como funciona
 
@@ -28,7 +28,8 @@ painel antigo que não faz parte do Geomonitor: não mexa nela.
 7. **Regra decide; IA só lê, resume e traduz.** Confirmação, importância, mudança e julgamento saem de regra testada.
    O sistema precisa funcionar com a IA desligada.
 8. **Preço é contexto**: nunca ordena eventos nem dispara aviso sozinho.
-9. **O site não calcula.** Cor só para estado medido; cinza = sem dado.
+9. **O site não calcula.** Cor só para estado medido; cinza = sem dado. Contagens, níveis de cor e proporções
+   vêm prontos no status.json.
 10. **Mostrar o que não se mede** (tela Método).
 11. **Custo zero**: biblioteca gratuita antes de LLM; nada pago obrigatório.
 12. **Segredos só nos Secrets do GitHub.** Nunca em código, log, mensagem de erro ou conversa.
@@ -38,7 +39,7 @@ painel antigo que não faz parte do Geomonitor: não mexa nela.
 ## Estrutura
 
 ```
-jobs/geomonitor/
+jobs/stratum/
   domain/        regras puras (sem banco, rede ou IA)
   connectors/    um conector por tipo de fonte; devolvem itens, não gravam
   fontes.py      a lista de fontes (única)
@@ -46,8 +47,10 @@ jobs/geomonitor/
   robo.py        uma rodada: coletar, gravar, registrar, avisar
   export.py      status.json para o site
   avisos.py      Telegram
+  domain/paises.py      regra de citação de países (dicionário, sem IA)
+  dados/nomes_paises.json  termos de cada país, gerado por scripts/preparar_nomes_paises.py
 jobs/tests/      test_referencia.py = casos de referência (não altere para passar)
-jobs/scripts/    ferramentas avulsas (ex.: preparar_paises.py)
+jobs/scripts/    ferramentas avulsas: preparar_paises.py (mapa), preparar_nomes_paises.py (dicionário)
 web/             site; dados do robô em public/dados/ (gerados, fora do git)
 ```
 
@@ -63,6 +66,6 @@ web/             site; dados do robô em public/dados/ (gerados, fora do git)
 
 ```
 cd jobs && pip install -r requirements.txt && python -m pytest        # testes do robô
-cd jobs && python -m geomonitor.robo --exportar ../web/public/dados/status.json   # uma rodada (banco temporário sem DATABASE_URL)
+cd jobs && python -m stratum.robo --exportar ../web/public/dados/status.json   # uma rodada (banco temporário sem DATABASE_URL)
 cd web && npm ci && npm test && npm run dev                           # site local em http://localhost:3000
 ```

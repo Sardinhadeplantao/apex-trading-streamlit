@@ -1,7 +1,7 @@
-import { dataHora, numero, situacao, tipoFonte } from "@/lib/formatar";
+import { dataHora, faixas, numero, situacao, tipoFonte } from "@/lib/formatar";
 import { lerStatus, type Fonte } from "@/lib/status";
 
-export const metadata = { title: "Método · Geomonitor" };
+export const metadata = { title: "Método · Stratum Global" };
 
 const BANCO: Record<string, string> = {
   permanente: "Permanente (Supabase). O que o robô coleta fica guardado.",
@@ -22,11 +22,12 @@ export default function Metodo() {
   const s = lerStatus();
   const rodada = s.ultima_rodada;
   const sit = situacao(rodada?.situacao);
+  const a = s.atencao;
   const criterios = agruparCriterios(s.fontes.filter((f) => f.ativa));
   return (
     <main className="pagina">
       <h1>Método</h1>
-      <p className="lead">Posso confiar? Esta página mostra como o sistema funciona, o que ele mede e o que ainda não mede.</p>
+      <p className="lead">Posso confiar? Esta página mostra como o Stratum Global funciona, o que ele mede e o que ainda não mede.</p>
 
       <section>
         <h2>Regras</h2>
@@ -42,6 +43,32 @@ export default function Metodo() {
       </section>
 
       <section>
+        <h2>Como contamos as citações de países</h2>
+        <p>
+          O globo pinta cada país pela quantidade de notícias que o citam, entre as publicadas nas últimas{" "}
+          {a?.janela_horas ?? 24} horas pelas fontes acompanhadas. Uma notícia cita um país quando o título ou o resumo traz
+          o nome dele (em inglês ou português), o gentílico em inglês (como <i>Russian</i>), a capital, uma sigla aceita
+          (US, UK, EUA, UAE) ou uma referência direta ao governo (Kremlin, Casa Branca).
+        </p>
+        <ul className="regras">
+          <li>Cada notícia conta uma vez por país, mesmo que cite o país várias vezes.</li>
+          <li>Diferencia maiúsculas: <i>Turkey</i> é país, <i>turkey</i> não. Nome dentro de outra palavra não conta (<i>Niger</i> em <i>Nigeria</i>).</li>
+          <li>O termo mais longo vence: <i>Papua New Guinea</i> não conta Guiné; <i>Latin American</i> não conta os Estados Unidos.</li>
+          <li>Citação mede atenção da imprensa e dos governos, não importância nem gravidade.</li>
+          <li>A regra pode errar. Toda contagem leva às notícias, para conferir.</li>
+        </ul>
+        {a && (
+          <dl className="resumo">
+            <dt>Versão da regra</dt><dd>{a.regra}</dd>
+            <dt>Faixas de cor</dt><dd>{faixas(a.niveis).join(" · ")} notícias</dd>
+            <dt>Nesta rodada</dt>
+            <dd>{numero(a.documentos)} notícias na janela, {numero(a.documentos_com_pais)} citam algum país, {numero(a.paises_citados)} países citados</dd>
+            <dt>Termos ignorados</dt><dd>{a.ignorados.join(", ")} (apontam para mais de um lugar ou pessoa)</dd>
+          </dl>
+        )}
+      </section>
+
+      <section>
         <h2>Saúde do robô</h2>
         {s.erro_banco && <p className="alerta">{s.erro_banco}</p>}
         <dl className="resumo">
@@ -49,7 +76,7 @@ export default function Metodo() {
           <dd><span className={`ponto ${sit.classe}`} aria-hidden /> {sit.texto} · {dataHora(rodada?.iniciada_em)} (Brasília)</dd>
           <dt>Banco</dt><dd>{s.banco ? BANCO[s.banco] : "—"}</dd>
           <dt>Fontes funcionando</dt><dd>{s.totais.fontes_ok} de {s.totais.fontes}</dd>
-          <dt>Documentos</dt><dd>{numero(s.totais.documentos)} no total · {numero(s.totais.documentos_24h)} nas últimas 24h</dd>
+          <dt>Documentos</dt><dd>{numero(s.totais.documentos)} no total · {numero(s.totais.documentos_24h)} coletados nas últimas 24h</dd>
           <dt>Versão do robô</dt><dd>{s.versao_robo ?? "—"}</dd>
         </dl>
         {s.rodadas_recentes.length > 0 && (
@@ -78,7 +105,7 @@ export default function Metodo() {
                     <tr key={f.id}>
                       <td><a href={f.url} target="_blank" rel="noreferrer">{f.nome}</a></td>
                       <td>{tipoFonte(f.tipo)}</td>
-                      <td>{f.pais ?? "Internacional"}</td>
+                      <td>{f.pais_nome ?? f.pais ?? "Internacional"}</td>
                       <td>{dataHora(c?.em)}</td>
                       <td><span className={`ponto ${x.classe}`} aria-hidden /> {x.texto}{c?.erro && <div className="erro">{c.erro}</div>}</td>
                       <td>{c ? numero(c.itens_novos) : "—"}</td>
@@ -99,15 +126,18 @@ export default function Metodo() {
         </>)}
       </section>
 
-      <section>
-        <h2>Últimos documentos coletados</h2>
-        <p className="discreto">Ainda soltos: a organização em eventos, com grau de confirmação, começa na fase 1.</p>
+      <section id="documentos">
+        <h2>Últimas notícias coletadas</h2>
+        <p className="discreto">Ainda soltas: a organização em eventos, com grau de confirmação, começa na fase 1.</p>
         {s.ultimos_documentos.length === 0 ? <p className="sem-dado-texto">Nenhum documento ainda.</p> : (
           <ul className="documentos">
             {s.ultimos_documentos.map((d, i) => (
               <li key={i}>
                 {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.titulo}</a> : d.titulo}
-                <div className="discreto">{d.fonte_nome} · publicado {dataHora(d.publicado_em)} · coletado {dataHora(d.conhecido_em)}</div>
+                <div className="discreto">
+                  {d.fonte_nome} · publicado {dataHora(d.publicado_em)} · coletado {dataHora(d.conhecido_em)}
+                  {d.paises && d.paises.length > 0 && <> · cita {d.paises.map((p) => p.nome).join(", ")}</>}
+                </div>
               </li>
             ))}
           </ul>
@@ -124,7 +154,10 @@ export default function Metodo() {
         </ul>
       </section>
 
-      <p className="discreto rodape">Status gerado em {dataHora(s.gerado_em)}. Informação de contexto; não é recomendação de investimento.</p>
+      <p className="discreto rodape">
+        Status gerado em {dataHora(s.gerado_em)}. Fronteiras: Natural Earth. Nomes de países: mledoze/countries (licença ODbL).
+        Informação de contexto; não é recomendação de investimento.
+      </p>
     </main>
   );
 }

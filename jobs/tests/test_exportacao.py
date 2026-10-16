@@ -43,8 +43,8 @@ def test_citacoes_por_pais_na_janela(engine, cfg):
     assert [d["titulo"] for d in rus["documentos"]] == ["Russia strikes Ukrainian ports", "Kremlin and Brazil sign deal"]
     assert [p["iso"] for p in s["mais_citados"]] == ["RUS", "BRA", "IRN", "UKR"]  # empate: ordem alfabética do nome
     assert s["mais_citados"][0]["proporcao"] == 1.0 and s["mais_citados"][1]["proporcao"] == 0.5
-    assert s["origem_fontes"] == [{"pais": "GBR", "nome": "Reino Unido", "documentos": 3},
-                                  {"pais": "USA", "nome": "Estados Unidos", "documentos": 1}]
+    assert s["origem_fontes"] == [{"pais": "GBR", "nome": "Reino Unido", "documentos": 3, "proporcao": 1.0},
+                                  {"pais": "USA", "nome": "Estados Unidos", "documentos": 1, "proporcao": 0.3333}]
 
 
 def test_ultimos_documentos_mais_recentes_primeiro_com_paises(engine, cfg):

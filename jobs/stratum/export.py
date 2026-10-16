@@ -138,7 +138,8 @@ def montar(engine, agora=db.agora) -> dict:
                          "documentos": documentos_do_pais[iso]} for iso, n in ranking},
         "mais_citados": [{"iso": iso, "nome": dicionario.nome(iso) or iso, "citacoes": n,
                           "proporcao": round(n / maximo, 4)} for iso, n in ranking[:MAIS_CITADOS]],
-        "origem_fontes": [{"pais": p, "nome": dicionario.nome(p) or "Internacional", "documentos": n}
+        "origem_fontes": [{"pais": p, "nome": dicionario.nome(p) or "Internacional", "documentos": n,
+                           "proporcao": round(n / max(origem.values()), 4)}
                           for p, n in sorted(origem.items(), key=lambda kv: (-kv[1], kv[0] or ""))],
     }
 

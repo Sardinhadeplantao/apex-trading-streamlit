@@ -5,15 +5,24 @@ nunca cole em conversa (nem com o Claude), em arquivo ou em print.
 
 ## 1. Ligar o site
 
-1. Abra https://github.com/Sardinhadeplantao/apex-trading-streamlit/settings/pages
-2. Em **Build and deployment**, no campo **Source**, escolha **GitHub Actions**. (Salva sozinho; não há botão.)
+1. No repositório, abra **Settings → Pages**.
+2. Em **Build and deployment**, clique na caixa **Source** (mostra "Deploy from a branch") e escolha **GitHub Actions**.
+   Salva sozinho; não há botão.
 
-Pronto: em até 15 minutos o robô publica o site em https://sardinhadeplantao.github.io/apex-trading-streamlit/
+Pronto: em até 15 minutos o robô publica o site em `https://sardinhadeplantao.github.io/<nome-do-repositório>/`.
+
+## 1b. Renomear o repositório para Stratum Global
+
+1. No repositório, abra **Settings → General**.
+2. Em **Repository name**, troque `apex-trading-streamlit` por `stratum-global` e clique em **Rename**.
+
+O site passa para https://sardinhadeplantao.github.io/stratum-global/ na rodada seguinte. Nada no código precisa mudar.
+Nas próximas sessões do Claude, escolha o repositório `stratum-global`.
 
 ## 2. Criar o banco (Supabase, gratuito)
 
 1. Entre em https://supabase.com e crie uma conta (dá para usar a do GitHub).
-2. **New project**: nome `geomonitor`; crie uma senha forte para o banco e guarde num gerenciador de senhas;
+2. **New project**: nome `stratum-global`; crie uma senha forte para o banco e guarde num gerenciador de senhas;
    região: uma do leste dos EUA (fica perto de onde o robô roda); plano **Free**.
 3. Com o projeto pronto, clique em **Connect** (no topo da página do projeto).
 4. Na lista de tipos de conexão, escolha **Session pooler**. É importante: o GitHub não consegue usar o endereço "Direct connection".
@@ -41,8 +50,8 @@ No repositório: **Settings → Secrets and variables → Actions → New reposi
 1. No repositório: **Actions → Robô (coleta e site) → Run workflow**.
 2. Marque **Mandar uma mensagem de teste no Telegram** e clique em **Run workflow**.
 3. Em uns 5 minutos:
-   - chega no Telegram: "Geomonitor: o robô está conectado ao seu Telegram.";
+   - chega no Telegram: "Stratum Global: o robô está conectado ao seu Telegram.";
    - a tela **Método** do site mostra "Banco: Permanente" e as fontes que funcionaram.
 
 Se algo não funcionar, a tela Método diz o que falhou. Numa sessão do Claude, peça:
-"veja a última execução do robô do geomonitor e me diga o que falhou".
+"veja a última execução do robô do Stratum Global e me diga o que falhou".

@@ -57,6 +57,7 @@ def preparar(entrada: dict) -> dict:
                 "wikidata": p.get("WIKIDATAID"),
                 "continente": p.get("CONTINENT"),
                 "regiao": p.get("SUBREGION"),
+                "centro": [round(p["LABEL_X"], 2), round(p["LABEL_Y"], 2)] if p.get("LABEL_X") is not None else None,
             },
             "geometry": {"type": geometria["type"], "coordinates": _arredondar(geometria["coordinates"])},
         })

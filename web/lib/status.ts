@@ -1,15 +1,24 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** Formato do public/dados/status.json gravado pelo robô (jobs/stratum/export.py). */
+/** Formato do public/dados/status.json gravado pelo robô (jobs/stratum/export.py, versão 2). */
 export type Coleta = { em: string | null; situacao: string; itens_lidos: number; itens_novos: number; erro: string | null };
 export type Fonte = {
-  id: string; nome: string; tipo: string; pais: string | null; idioma: string | null; url: string; criterio: string | null;
-  ativa: boolean; ultima_coleta: Coleta | null; documentos: number; documentos_24h: number;
+  id: string; nome: string; tipo: string; pais: string | null; pais_nome?: string | null; idioma: string | null; url: string;
+  criterio: string | null; ativa: boolean; ultima_coleta: Coleta | null; documentos: number; documentos_24h: number;
 };
+export type PaisCitado = { iso: string; nome: string };
 export type Documento = {
-  titulo: string; url: string | null; fonte: string; fonte_nome: string; publicado_em: string | null; conhecido_em: string | null;
+  titulo: string; url: string | null; fonte: string; fonte_nome: string; fonte_tipo?: string | null; fonte_pais?: string | null;
+  fonte_pais_nome?: string | null; publicado_em: string | null; conhecido_em: string | null; paises?: PaisCitado[];
 };
+export type Atencao = {
+  regra: string; janela_horas: number; inicio: string; fim: string; niveis: number[]; documentos: number;
+  documentos_com_pais: number; oficiais: number; paises_citados: number; ignorados: string[];
+};
+export type PaisAtencao = { nome: string; citacoes: number; nivel: number; documentos: Documento[] };
+export type MaisCitado = { iso: string; nome: string; citacoes: number; proporcao: number };
+export type Origem = { pais: string | null; nome: string; documentos: number; proporcao: number };
 export type Status = {
   versao_formato: number;
   versao_robo: string | null;
@@ -21,11 +30,16 @@ export type Status = {
   totais: { documentos: number; documentos_24h: number; fontes: number; fontes_ok: number };
   fontes: Fonte[];
   ultimos_documentos: Documento[];
+  atencao: Atencao | null;
+  paises: Record<string, PaisAtencao>;
+  mais_citados: MaisCitado[];
+  origem_fontes: Origem[];
 };
 
 const VAZIO: Status = {
-  versao_formato: 1, versao_robo: null, gerado_em: null, banco: null, erro_banco: null, ultima_rodada: null,
+  versao_formato: 2, versao_robo: null, gerado_em: null, banco: null, erro_banco: null, ultima_rodada: null,
   rodadas_recentes: [], totais: { documentos: 0, documentos_24h: 0, fontes: 0, fontes_ok: 0 }, fontes: [], ultimos_documentos: [],
+  atencao: null, paises: {}, mais_citados: [], origem_fontes: [],
 };
 
 /** Lido na hora de montar o site. Sem arquivo (robô ainda não rodou), devolve o estado vazio. */

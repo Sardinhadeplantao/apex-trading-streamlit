@@ -1,26 +1,29 @@
-import { continente } from "@/lib/formatar";
+import { continente, diaHora, plural } from "@/lib/formatar";
+import type { PaisAtencao } from "@/lib/status";
 
 /** Propriedades de cada país em public/geo/paises.geojson (gerado por jobs/scripts/preparar_paises.py). */
 export type Pais = {
   iso: string; iso_oficial: boolean; iso2: string | null; nome: string; nome_en: string;
-  wikidata: string | null; continente: string | null; regiao: string | null;
+  wikidata: string | null; continente: string | null; regiao: string | null; centro?: [number, number] | null;
 };
 
-export default function PainelPais({ pais, fechar }: { pais: Pais; fechar: () => void }) {
+type Props = { pais: Pais; atencao: PaisAtencao | null; janelaHoras: number; fechar: () => void };
+
+export default function PainelPais({ pais, atencao, janelaHoras, fechar }: Props) {
   return (
     <aside className="painel" aria-label={`Painel de ${pais.nome}`}>
       <div className="painel-topo">
         <div>
           <h2>{pais.nome}</h2>
-          {pais.nome_en !== pais.nome && <p className="discreto">{pais.nome_en}</p>}
+          {pais.nome_en && pais.nome_en !== pais.nome && <p className="discreto">{pais.nome_en}</p>}
         </div>
         <button onClick={fechar} className="fechar" aria-label="Fechar painel">×</button>
       </div>
 
       <dl className="codigos">
-        <dt>{pais.iso_oficial ? "ISO 3166" : "Código"}</dt>
-        <dd>{pais.iso}{pais.iso2 ? ` · ${pais.iso2}` : ""}{!pais.iso_oficial && <span className="discreto"> (sem código ISO; código do Natural Earth)</span>}</dd>
-        <dt>Continente</dt><dd>{continente(pais.continente)}</dd>
+        <dt>{pais.iso_oficial === false ? "Código" : "ISO 3166"}</dt>
+        <dd>{pais.iso}{pais.iso2 ? ` · ${pais.iso2}` : ""}</dd>
+        {pais.continente && (<><dt>Continente</dt><dd>{continente(pais.continente)}</dd></>)}
         {pais.wikidata && (<>
           <dt>Wikidata</dt>
           <dd><a href={`https://www.wikidata.org/wiki/${pais.wikidata}`} target="_blank" rel="noreferrer">{pais.wikidata}</a></dd>
@@ -28,8 +31,23 @@ export default function PainelPais({ pais, fechar }: { pais: Pais; fechar: () =>
       </dl>
 
       <section>
-        <h3>Eventos</h3>
-        <p className="sem-dado-texto">Nenhum evento ligado a este país ainda. A organização das notícias em eventos começa na fase 1.</p>
+        <h3>Nas últimas {janelaHoras} horas</h3>
+        {atencao ? (<>
+          <p className="destaque-numero">{plural(atencao.citacoes, "notícia cita", "notícias citam")} este país</p>
+          <ul className="lista-noticias">
+            {atencao.documentos.map((d, i) => (
+              <li key={i}>
+                {d.url ? <a href={d.url} target="_blank" rel="noreferrer">{d.titulo}</a> : d.titulo}
+                <div className="discreto">{d.fonte_nome} · {diaHora(d.publicado_em ?? d.conhecido_em)}</div>
+              </li>
+            ))}
+          </ul>
+          {atencao.citacoes > atencao.documentos.length && (
+            <p className="discreto">Mostrando as {atencao.documentos.length} mais recentes.</p>
+          )}
+        </>) : (
+          <p className="sem-dado-texto">Nenhuma notícia das fontes acompanhadas cita este país nas últimas {janelaHoras} horas.</p>
+        )}
       </section>
       <section>
         <h3>Mercados</h3>
