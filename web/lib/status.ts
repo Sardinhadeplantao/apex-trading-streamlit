@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/** Formato do public/dados/status.json gravado pelo robô (jobs/geomonitor/export.py). */
+/** Formato do public/dados/status.json gravado pelo robô (jobs/stratum/export.py). */
 export type Coleta = { em: string | null; situacao: string; itens_lidos: number; itens_novos: number; erro: string | null };
 export type Fonte = {
   id: string; nome: string; tipo: string; pais: string | null; idioma: string | null; url: string; criterio: string | null;

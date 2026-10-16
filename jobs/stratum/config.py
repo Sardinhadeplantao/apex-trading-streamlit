@@ -2,7 +2,7 @@
 import os
 from dataclasses import dataclass
 
-USER_AGENT_PADRAO = "geomonitor/0.1 (+https://github.com/Sardinhadeplantao/apex-trading-streamlit)"
+USER_AGENT_PADRAO = "stratum-global/0.1 (+https://github.com/Sardinhadeplantao/stratum-global)"
 
 
 @dataclass(frozen=True)
@@ -30,5 +30,5 @@ def ler() -> Config:
         database_url=_env("DATABASE_URL"),
         telegram_token=_env("TELEGRAM_BOT_TOKEN"),
         telegram_chat=_env("TELEGRAM_CHAT_ID"),
-        user_agent=_env("GEOMONITOR_USER_AGENT") or USER_AGENT_PADRAO,
+        user_agent=_env("STRATUM_USER_AGENT") or USER_AGENT_PADRAO,
     )

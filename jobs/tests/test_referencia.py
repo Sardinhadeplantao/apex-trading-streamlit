@@ -5,7 +5,7 @@ from datetime import timedelta
 
 from sqlalchemy import func, select
 
-from geomonitor import db, export, robo
+from stratum import db, export, robo
 from conftest import Relogio, SessaoFalsa, fonte
 
 URL_A, URL_B = "https://a.example/feed", "https://b.example/feed"

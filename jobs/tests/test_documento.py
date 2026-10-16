@@ -1,4 +1,4 @@
-from geomonitor.domain.documento import hash_documento, limpar_texto, url_canonica
+from stratum.domain.documento import hash_documento, limpar_texto, url_canonica
 
 
 def test_url_canonica_tira_rastreio_ancora_e_normaliza():

@@ -1,5 +1,5 @@
 {
-  "name": "geomonitor-web",
+  "name": "stratum-global-web",
   "private": true,
   "type": "module",
   "scripts": {

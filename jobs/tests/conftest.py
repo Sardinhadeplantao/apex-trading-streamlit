@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from geomonitor import config, db
+from stratum import config, db
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

@@ -1,6 +1,6 @@
 """Robô: uma rodada lê cada fonte, grava só o que é novo e registra tudo. Uma fonte falhar não para as outras.
 
-Uso:  python -m geomonitor.robo [--exportar CAMINHO/status.json]
+Uso:  python -m stratum.robo [--exportar CAMINHO/status.json]
 """
 import argparse
 import sys
@@ -9,10 +9,10 @@ from dataclasses import dataclass, field
 import requests
 from sqlalchemy import select
 
-from geomonitor import VERSAO, avisos, config, db, export
-from geomonitor import fontes as catalogo
-from geomonitor.connectors import rss
-from geomonitor.domain.documento import hash_documento
+from stratum import VERSAO, avisos, config, db, export
+from stratum import fontes as catalogo
+from stratum.connectors import rss
+from stratum.domain.documento import hash_documento
 
 CONECTORES = {"rss": rss.ler}
 
@@ -102,18 +102,18 @@ def situacao_anterior(engine, rodada_id: int) -> str | None:
 def avisar_mudanca(anterior: str | None, resultado: Resultado, enviar=avisos.enviar) -> bool:
     """Avisa só quando a situação muda (evita uma mensagem a cada 15 minutos)."""
     if resultado.situacao == "falhou" and anterior != "falhou":
-        return enviar("Geomonitor: todas as fontes falharam nesta rodada. Veja a tela Método do site.")
+        return enviar("Stratum Global: todas as fontes falharam nesta rodada. Veja a tela Método do site.")
     if resultado.situacao != "falhou" and anterior == "falhou":
-        return enviar("Geomonitor: a coleta voltou a funcionar.")
+        return enviar("Stratum Global: a coleta voltou a funcionar.")
     return False
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(description="Uma rodada do robô do Geomonitor.")
+    p = argparse.ArgumentParser(description="Uma rodada do robô do Stratum Global.")
     p.add_argument("--exportar", help="grava o status para o site neste caminho (JSON)")
     args = p.parse_args(argv)
     cfg = config.ler()
-    print(f"Geomonitor {VERSAO}. Banco: {'permanente' if cfg.banco_permanente else 'temporário (DATABASE_URL não configurado)'}.")
+    print(f"Stratum Global {VERSAO}. Banco: {'permanente' if cfg.banco_permanente else 'temporário (DATABASE_URL não configurado)'}.")
 
     try:
         engine = db.conectar(cfg.database_url)
