@@ -43,8 +43,10 @@ export default function Globo() {
     };
     limpar.current = () => { selecionar(null); setPais(null); };
 
-    import("maplibre-gl").then(({ default: maplibregl }) => {
+    import("maplibre-gl").then((maplibregl) => {  // a versão 6 só tem importação por nome (sem "default")
       if (cancelado || !caixa.current) return;
+      // Worker copiado para public/maplibre/ por scripts/copiar-maplibre.mjs; "v" evita usar um worker de versão antiga em cache
+      maplibregl.setWorkerUrl(`${location.origin}${BASE}/maplibre/maplibre-gl-worker.mjs?v=${maplibregl.getVersion()}`);
       const plano = window.matchMedia("(max-width: 700px)").matches;
       mapa = new maplibregl.Map({
         container: caixa.current,

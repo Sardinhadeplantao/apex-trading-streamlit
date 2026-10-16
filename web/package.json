@@ -3,12 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copiar-maplibre.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copiar-maplibre.mjs",
     "build": "next build",
     "test": "node --experimental-strip-types --test lib/*.test.ts"
   },
   "dependencies": {
-    "maplibre-gl": "5.24.0",
+    "maplibre-gl": "6.12.0",
     "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0"
